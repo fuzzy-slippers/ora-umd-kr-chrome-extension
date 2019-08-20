@@ -1,0 +1,145 @@
+
+/* awd - To hide Anticipated Direct (Baltimore Only) & Obligated Direct (Baltimore Only) */
+#tab-DetailsDates\3a TimeMoney-div > table > tbody > tr:nth-child(5) {
+  visibility: hidden;
+}
+
+/* awd - to hide Anticipated F&A (Baltimore Only): & Obligated F&A (Baltimore Only) */
+#tab-DetailsDates\3a TimeMoney-div > table > tbody > tr:nth-child(6) {
+  visibility: hidden;
+}
+
+
+
+/* t&m - gray summary box Oblg. Direct label */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+#awardHierarchyScrollable > div > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(5)  {
+  visibility: hidden;
+}
+
+/* f&m - gray summary box Oblg. Direct column data - view only on doc - looks for li tag with id in format li????0-???? since they seem to be in format li030315-00001 with whatever award num */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+li[id^='li'][id*='-0'] > a > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(5) {
+  visibility: hidden;
+}
+
+/* t&m - gray summary box Oblg. F&A label */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+#awardHierarchyScrollable > div > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(6) {
+  visibility: hidden;
+}
+
+/* f&m - gray summary box Oblg. F&A column data - view only on doc - looks for li tag with id in format li????0-???? since they seem to be in format li030315-00001 with whatever award num */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+li[id^='li'][id*='-0'] > a > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(6) {
+  visibility: hidden;
+}
+
+
+/* t&m - gray summary box Ant. Direct label */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+#awardHierarchyScrollable > div > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(8) {
+  visibility: hidden;
+}
+
+
+/* f&m - gray summary box Ant. Direct column data - view only on doc - looks for li tag with id in format li????0-???? since they seem to be in format li030315-00001 with whatever award num */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+li[id^='li'][id*='-0'] > a > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(8) {
+  visibility: hidden;
+}
+
+/* t&m - gray summary box Ant. F&A label */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+#awardHierarchyScrollable > div > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(9) {
+  visibility: hidden;
+}
+
+/* f&m - gray summary box Ant. F&A column data - view only on doc - looks for li tag with id in format li????0-???? since they seem to be in format li030315-00001 with whatever award num */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+li[id^='li'][id*='-0'] > a > div > table > tbody > tr > td:nth-last-child(10):first-child ~ td:nth-child(9) {
+  visibility: hidden;
+}
+
+
+/* t&m - transactions hide Obligated F&A Change */
+/* in order to not hide any table cells for the "Distributed/Distributable" dropdown selection which uses the identical table except for the number of columns, measuring the number of columns and only hiding the specified column if it detects that the 10th column is the last - trick from: https://alistapart.com/article/quantity-queries-for-css/ */
+div[id^='tab-Transactions'] > div.tab-container > table > tbody > tr > th:nth-child(7) {
+  visibility: hidden;
+}
+/* t&m - transactions hide Obligated F&A Change dollar amount */
+div[id^='tab-Transactions'] > div.tab-container > table > tbody > tr > td:nth-child(7) {
+  visibility: hidden;
+}
+
+/* t&m transactions Anticipated F&A Change label */
+div[id^='tab-Transactions'] > div.tab-container > table > tbody > tr > th:nth-child(9) {
+  visibility: hidden;
+}
+
+/* t&m transactions Anticipated F&A Change dollar amt */
+div[id^='tab-Transactions'] > div.tab-container > table > tbody > tr > td:nth-child(9) {
+  visibility: hidden;
+}
+
+
+
+
+
+
+/* NOT SURE IF NEEDED t&m - gray summary box Ant. Direct view-only box w dollar amt
+#awardHierarchyNodeItems\[1\]\.anticipatedTotalDirect {
+  visibility: hidden;
+}
+*/
+
+/* CHANGE TO LOGO AT SOME POINT -  drop shadow in red behind all H1 tags (not further specifying)
+h1 {
+  text-shadow: 1px 1px darkred;
+}
+*/
+
+
+
+/* not yet working */
+/*
+#upper_left {
+width: 125px; height: 125px;
+position: absolute;
+top: 0; left: 0;
+background-image: url("icon.png");
+background-repeat: no-repeat;
+background-color: red;
+}
+*/
+
+
+/* not used */
+
+/*
+
+
+body {
+  background-color: lightblue;
+}
+
+p {
+  border-style: dotted solid;
+}
+
+#u1gk19wq {
+  background-color: lightblue;
+}
+
+#Uif-GlobalApplicationHeader > div.container-fluid {
+  background-color: lightblue;
+}
+
+
+
+#Uif-GlobalApplicationFooter {
+  background-color: lightblue;
+}
+
+
+*/
