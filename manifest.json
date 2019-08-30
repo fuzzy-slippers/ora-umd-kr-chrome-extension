@@ -1,6 +1,6 @@
 {
   "name":           "(ORA@UMD) KR Extension for Power Users",
-  "version":        "0.57",
+  "version":        "0.62",
   "description":    "A Chrome browser extension created by the Office of Research Administration at the University of Maryland.",
   "default_locale": "en",
   "background": {
@@ -8,7 +8,7 @@
     "scripts": ["background.js"]
   },
   "browser_action": {
-    "default_icon": "ora_icon_off_128.png"
+    "default_icon": "ora_icon_off_dark_128.png"
   },
   "permissions":    [
     "webNavigation",
@@ -18,6 +18,6 @@
   ],
   "icons": {
     "128": "ora_icon_128.png"
-  },  
+  },
   "manifest_version": 2
 }

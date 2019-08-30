@@ -19,16 +19,21 @@
  // start with the extension enabled
  var extensionEnabled = true;
 
+
  //add a listener that when the button is clicked toggles the extension off and the second time on, then off, etc
  chrome.browserAction.onClicked.addListener(function(tab) {
-   extensionEnabled = !extensionEnabled;
-   updatePageIfExtensionEnabled(extensionEnabled, tab);
+   //to avoid being able to enable/disable the extension on non-kr pages by clicking the icon, double check via a regular expression that the url has kuali.co, otherwise ignore the button click on unrelated sites and leave it dark gray
+   if (tab.url && /kuali.co/.test(tab.url))
+   {
+     extensionEnabled = !extensionEnabled;
+     updatePageIfExtensionEnabled(extensionEnabled, tab);
+   }
  });
 
 
  //add a listener that when going to any new page/refreshing page, etc, sets the ora icon to gray (then only for times when the plugin is actually active will it be turned to green by the next listener) - couldn't figure out another way to do it because the other listener only fires when the URL matches KR, otherwise nothing happens
  chrome.webNavigation.onBeforeNavigate.addListener(function(tab) {
-   chrome.browserAction.setIcon({path: "ora_icon_off_128.png", tabId:tab.id});
+   chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png", tabId:tab.id});
 }, {});
 
  //add a listener for each reload of the page (as the extension will need to run on each reload)
@@ -38,10 +43,10 @@
     updatePageIfExtensionEnabled(extensionEnabled, tab);
 }, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
 
-chrome.webNavigation.onCompleted.addListener(function(tab) {
-   //alert("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
-   updatePageIfExtensionEnabled(extensionEnabled, tab);
-}, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
+// chrome.webNavigation.onCompleted.addListener(function(tab) {
+//    //alert("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
+//    updatePageIfExtensionEnabled(extensionEnabled, tab);
+// }, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
 
  /**
   * actually loads the css and javascript to hide/update the page, if the exension is currently enabled
@@ -55,9 +60,9 @@ chrome.webNavigation.onCompleted.addListener(function(tab) {
       //  chrome.tabs.executeScript(tab.id, {code:"alert('on')"});
     }
     else{
-      chrome.browserAction.setIcon({path: "ora_icon_off_128.png", tabId:tab.id});
-      //chrome.tabs.executeScript(tab.id, {code:"alert('off')"});
-      //chrome.tabs.insertCSS(tab.id, {file: "empty.css", allFrames: true});
+      // if the user clicks to turn the extension off on a valid KR page, show the yellow disabled icon, not the dark gray icon
+      chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:tab.id});
+      //TODO alert("the ORA plugin has been disabled but you may need to navigate to a new tab or page for all changes to take effect");
     }
 }
 
