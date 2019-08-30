@@ -62,7 +62,7 @@
     else{
       // if the user clicks to turn the extension off on a valid KR page, show the yellow disabled icon, not the dark gray icon
       chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:tab.id});
-      //TODO alert("the ORA plugin has been disabled but you may need to navigate to a new tab or page for all changes to take effect");
+      alert(`The "(ORA@UMD) KR Extension for Power Users" has been disabled but you may need to navigate to a new tab, KR page or save the document for all changes made by the plugin to be removed completely`);
     }
 }
 
