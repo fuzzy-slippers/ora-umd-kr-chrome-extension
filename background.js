@@ -68,8 +68,8 @@
  *
  */
   function checkIfCurrentPageInListOfPagesWeModify(tab) {
-    if (tab.url && /kuali.co/.test(tab.url)) {
-      alert(`detected this page has kuali.co in the URL`);
+    if (tab.url && /awardHome.do/.test(tab.url)) {
+      alert(`detected this page has awardHome.do in the URL`);
     }
 
 
