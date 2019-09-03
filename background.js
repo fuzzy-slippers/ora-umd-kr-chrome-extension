@@ -34,13 +34,14 @@
 
 
  /**
-  * actually loads the css and javascript to hide/update the page, if the exension is currently enabled
+  * check if the extension (using global flag keeping history) currently shows the extension was clicked on, if so show on icon and make page changes, if not show off icon
   *
   */
   function updatePageIfExtensionEnabled(extensionEnabled, tab) {
     if (extensionEnabled){
       chrome.browserAction.setIcon({path: "ora_icon_128.png", tabId:tab.id});
       changePageOverlayCssAndJs(tab);
+                checkIfCurrentPageInListOfPagesWeModify(tab);
       //  chrome.tabs.executeScript(tab.id, {code:"alert('on')"});
     }
     else{
@@ -49,7 +50,6 @@
       //chrome.tabs.insertCSS(tab.id, {file: "empty.css", allFrames: true});
     }
 }
-
 
 /**
  * actually overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
@@ -60,6 +60,21 @@
      chrome.tabs.executeScript(tab.id, {file: "contentScript.js", allFrames: true});
 }
 
+//awardHome.do
+
+/**
+ * check if the page being loaded is one that is in the list of KR pages we plan to modify
+ * (will allow us at the above level to skip trying to load any changes/code if we know we dont plan to modify this module/tab/page in KR)
+ *
+ */
+  function checkIfCurrentPageInListOfPagesWeModify(tab) {
+    if (tab.url && /kuali.co/.test(tab.url)) {
+      alert(`detected this page has kuali.co in the URL`);
+    }
+
+
+    return true;
+  }
 
 
 
