@@ -32,10 +32,6 @@
     updatePageIfExtensionEnabled(extensionEnabled, tab);
 }, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
 
-chrome.webNavigation.onCompleted.addListener(function(tab) {
-   //alert("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
-   updatePageIfExtensionEnabled(extensionEnabled, tab);
-}, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
 
  /**
   * actually loads the css and javascript to hide/update the page, if the exension is currently enabled
