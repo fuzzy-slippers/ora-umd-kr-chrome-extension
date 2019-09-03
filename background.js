@@ -40,15 +40,24 @@
   function updatePageIfExtensionEnabled(extensionEnabled, tab) {
     if (extensionEnabled){
       chrome.browserAction.setIcon({path: "ora_icon_128.png", tabId:tab.id});
-      chrome.tabs.insertCSS(tab.id, {file: "myStyles.css", allFrames: true});
-      chrome.tabs.executeScript(tab.id, {file: "contentScript.js", allFrames: true});
+      changePageOverlayCssAndJs(tab);
       //  chrome.tabs.executeScript(tab.id, {code:"alert('on')"});
     }
     else{
-      chrome.browserAction.setIcon({path: "ora_icon_off_128.png", tabId:tab.id});
+      chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png", tabId:tab.id});
       //chrome.tabs.executeScript(tab.id, {code:"alert('off')"});
       //chrome.tabs.insertCSS(tab.id, {file: "empty.css", allFrames: true});
     }
+}
+
+
+/**
+ * actually overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
+ *
+ */
+ function changePageOverlayCssAndJs(tab) {
+     chrome.tabs.insertCSS(tab.id, {file: "myStyles.css", allFrames: true});
+     chrome.tabs.executeScript(tab.id, {file: "contentScript.js", allFrames: true});
 }
 
 
