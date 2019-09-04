@@ -74,6 +74,17 @@
     else if (tab.url && /\/time/.test(tab.url)) {
           alert(`detected this page has "\time" in the URL which is: ${tab.url} `);
     }
+    //institutional
+    else if (tab.url && /\/institutional/.test(tab.url)) {
+          alert(`detected this page has "\institutional" in the URL which is: ${tab.url} `);
+    }
+    //proposalDevelopment
+    else if (tab.url && /\/proposalDevelopment/.test(tab.url)) {
+          alert(`detected this page has "\proposalDevelopment" in the URL which is: ${tab.url} `);
+    }
+    else if (tab.url && /\/sub/.test(tab.url)) {
+          alert(`detected this page has "\sub" in the URL which is: ${tab.url} `);
+    }
     else {
       alert(`did not detect anything, but tab.url is: ${tab.url}`);
     }
