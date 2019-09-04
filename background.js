@@ -68,8 +68,11 @@
  *
  */
   function checkIfCurrentPageInListOfPagesWeModify(tab) {
-    if (tab.url && /awardHome.do/.test(tab.url)) {
-      alert(`detected this page has awardHome.do in the URL`);
+    if (tab.url && /\/award/.test(tab.url)) {
+      alert(`detected this page has "/award" in the URL`);
+    }
+    else if (tab.url && /\time/.test(tab.url)) {
+          alert(`detected this page has "\time" in the URL`);
     }
 
 
