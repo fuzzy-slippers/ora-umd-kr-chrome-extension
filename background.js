@@ -1,4 +1,3 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -13,16 +12,22 @@
  // start with the extension enabled
  var extensionEnabled = true;
 
+ /*
+  * ::Listeners::
+  */
+
  //add a listener that when the button is clicked toggles the extension off and the second time on, then off, etc
  chrome.browserAction.onClicked.addListener(function(tab) {
    extensionEnabled = !extensionEnabled;
+   //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
+   setIconInactiveOrDisabled(extensionEnabled, tab);
    updatePageIfExtensionEnabled(extensionEnabled, tab);
  });
 
 
- //add a listener that when going to any new page/refreshing page, etc, sets the ora icon to gray (then only for times when the plugin is actually active will it be turned to green by the next listener) - couldn't figure out another way to do it because the other listener only fires when the URL matches KR, otherwise nothing happens
+ //add a listener that when going to any new page/refreshing page, etc, if the extension is currently clicked on, default the icon to the inactive color but if it's clicked off default the icon to the disabled color
  chrome.webNavigation.onBeforeNavigate.addListener(function(tab) {
-   chrome.browserAction.setIcon({path: "ora_icon_off_128.png", tabId:tab.id});
+   setIconInactiveOrDisabled(extensionEnabled, tab)
 }, {});
 
  //add a listener for each reload of the page (as the extension will need to run on each reload)
@@ -33,66 +38,103 @@
 }, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
 
 
+/*
+ * ::Functions::
+ */
+
+
  /**
-  * check if the extension (using global flag keeping history) currently shows the extension was clicked on, if so show on icon and make page changes, if not show off icon
-  *
+  * based on whether the extension is currently enabled (using flag), either set to the inactive color if clicked on or the disabled color if clicked off (turning it green will happen at a later stage right along with the code to actually modify the page, if thats the case)
   */
-  function updatePageIfExtensionEnabled(extensionEnabled, tab) {
+  function setIconInactiveOrDisabled(extensionEnabled, tab) {
     if (extensionEnabled){
-      chrome.browserAction.setIcon({path: "ora_icon_128.png", tabId:tab.id});
-      changePageOverlayCssAndJs(tab);
-                checkIfCurrentPageInListOfPagesWeModify(tab);
-      //  chrome.tabs.executeScript(tab.id, {code:"alert('on')"});
+      setExtensionIconInactiveColor(tab);
     }
     else{
-      chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png", tabId:tab.id});
-      //chrome.tabs.executeScript(tab.id, {code:"alert('off')"});
-      //chrome.tabs.insertCSS(tab.id, {file: "empty.css", allFrames: true});
+      setExtensionIconDisabledColor(tab);
     }
-}
-
-/**
- * actually overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
- *
- */
- function changePageOverlayCssAndJs(tab) {
-     chrome.tabs.insertCSS(tab.id, {file: "myStyles.css", allFrames: true});
-     chrome.tabs.executeScript(tab.id, {file: "contentScript.js", allFrames: true});
-}
-
-//awardHome.do
-
-/**
- * check if the page being loaded is one that is in the list of KR pages we plan to modify
- * (will allow us at the above level to skip trying to load any changes/code if we know we dont plan to modify this module/tab/page in KR)
- *
- */
-  function checkIfCurrentPageInListOfPagesWeModify(tab) {
-    if (tab.url && /\/award/.test(tab.url)) {
-      alert(`detected this page has "/award" in the URL which is: ${tab.url} `);
-    }
-    else if (tab.url && /\/time/.test(tab.url)) {
-          alert(`detected this page has "\time" in the URL which is: ${tab.url} `);
-    }
-    //institutional
-    else if (tab.url && /\/institutional/.test(tab.url)) {
-          alert(`detected this page has "\institutional" in the URL which is: ${tab.url} `);
-    }
-    //proposalDevelopment
-    else if (tab.url && /\/proposalDevelopment/.test(tab.url)) {
-          alert(`detected this page has "\proposalDevelopment" in the URL which is: ${tab.url} `);
-    }
-    else if (tab.url && /\/sub/.test(tab.url)) {
-          alert(`detected this page has "\sub" in the URL which is: ${tab.url} `);
-    }
-    else {
-      alert(`did not detect anything, but tab.url is: ${tab.url}`);
-    }
-
-
-    return true;
   }
 
+ /**
+  * check if the extension is currently on (using global flag keeping history of on/off), if so set to inactive icon initially and have it further check if it's a module/tab that should have changes made to the page, otherwise if off set the icon to the disabled color
+  */
+  function updatePageIfExtensionEnabled(extensionEnabled, tab) {
+  if (extensionEnabled){
+    detectKRModuleUpdateAccordingly(tab);
+  }
+}
+
+
+
+/*
+ * change the extension icon to green to indicate its active on the current page
+ */
+ function setExtensionIconActiveColor(tab) {
+   alert(`about to set icon to green (inside setExtensionIconActiveColor)`);
+   chrome.browserAction.setIcon({path: "ora_icon_128.png", tabId:tab.id});
+ }
+
+ /*
+  * change the extension icon to yellow to indicate we are on a KR page, but it's not doing anything to the current page
+  */
+  function setExtensionIconInactiveColor(tab) {
+    chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:tab.id});
+  }
+
+  /*
+   * change the extension icon to dark to indicate we are on a non-KR page or it's been disabled
+   */
+   function setExtensionIconDisabledColor(tab) {
+     chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png", tabId:tab.id});
+   }
+
+
+  /**
+  * check if the page being loaded is one that is in the list of KR pages we plan to modify
+  * (will allow us at the above level to skip trying to load any changes/code if we know we dont plan to modify this module/tab/page in KR)
+  *
+  */
+  function detectKRModuleUpdateAccordingly(tab) {
+    //make sure the tab.url is not undefined before using it to check which module the page is on
+    if (tab.url) {
+      if (/\/award/.test(tab.url)) {
+        alert(`detected this page has "/award" in the URL which is: ${tab.url} `);
+        awdModuleDetectTabAndUpdateAccordingly(tab);
+      }
+      else if (/\/time/.test(tab.url)) {
+            //TODO: Need to separate out the Time and Money CSS and Javascript into separate files and a function to detect the tab chosen needs to be created so its only imported on the one tab that needs it to run
+            alert(`detected this page has "\time" in the URL which is: ${tab.url} `);
+      }
+      //institutional
+      else if (/\/institutional/.test(tab.url)) {
+            alert(`detected this page has "\institutional" in the URL which is: ${tab.url} `);
+      }
+      else if (/\/proposalDevelopment/.test(tab.url)) {
+            alert(`detected this page has "\proposalDevelopment" in the URL which is: ${tab.url} `);
+      }
+      else if (/\/sub/.test(tab.url)) {
+            alert(`detected this page has "\sub" in the URL which is: ${tab.url} `);
+      }
+      else {
+        alert(`did not detect anything, but tab.url is: ${tab.url}`);
+      }
+
+    }
+  }
+
+
+
+    /**
+    * makes the customizations specific to the award module as well as change the icon to indicate the extension is actively making changes
+    * overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
+    *
+    */
+    function awdModuleDetectTabAndUpdateAccordingly(tab) {
+       //TODO: determine tab inside award module and based on that call function to update icon color and css/js based on tab selected (do nothing including leave icon yellow for tabs that do not have any custom overlays)
+       setExtensionIconActiveColor(tab);
+       chrome.tabs.insertCSS(tab.id, {file: "myStyles.css", allFrames: true});
+       chrome.tabs.executeScript(tab.id, {file: "contentScript.js", allFrames: true});
+    }
 
 
 
