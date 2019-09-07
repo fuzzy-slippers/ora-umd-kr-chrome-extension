@@ -4,7 +4,7 @@
   "description":    "A Chrome browser extension created by the Office of Research Administration at the University of Maryland.",
   "default_locale": "en",
   "background": {
-    "persistent": true,
+    "persistent": false,
     "scripts": ["background.js"]
   },
   "browser_action": {
