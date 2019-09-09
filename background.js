@@ -95,6 +95,7 @@
   *
   */
   function detectKRModuleUpdateAccordingly(tab) {
+    alert(`document.forms["KualiForm"].action is showing: ${document.forms["KualiForm"].action}`)
     //make sure the tab.url is not undefined before using it to check which module the page is on
     if (tab.url) {
       if (/\/award/.test(tab.url)) {
