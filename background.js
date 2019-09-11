@@ -33,10 +33,22 @@
  //add a listener for each reload of the page (as the extension will need to run on each reload)
  //but only run at all if it matches specific URLs (to keep it specific looking for kuali.co /res or /dashboard...later may decide to just have it match any kuali.co URL, it's a judgement call on how specific we want to be)
  chrome.webNavigation.onCompleted.addListener(function(tab) {
-    //alert("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
-    updatePageIfExtensionEnabled(extensionEnabled, tab);
+   //now that we know we are on a KR page, call the content script that will detect the KR module and tab selected by checking the KualiForm action URL/value (will have to be passed back as a message)
+   chrome.tabs.executeScript(tab.id, {file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
+   //alert("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
+   updatePageIfExtensionEnabled(extensionEnabled, tab);
 }, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
 
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    alert(`request.greeting is: ${request.greeting}`)
+    alert(sender.tab ?
+                "from a content script:" + sender.tab.url :
+                "from the extension");
+    if (request.greeting == "hello")
+      sendResponse({farewell: "goodbye"});
+  });
 
 /*
  * ::Functions::
@@ -95,7 +107,15 @@
   *
   */
   function detectKRModuleUpdateAccordingly(tab) {
-    alert(`document.forms["KualiForm"].action is showing: ${document.forms["KualiForm"].action}`)
+    if (document.forms["KualiForm"]) {
+        if (document.forms["KualiForm"].action)
+          alert(`document.forms["KualiForm"].action is showing: ${document.forms["KualiForm"].action}`);
+        else
+          alert(`document.forms["KualiForm"].action not found (found to be FALSY)`);
+    }
+    else
+      alert(`document.forms["KualiForm"] itself not found (found to be FALSY)`);
+
     //make sure the tab.url is not undefined before using it to check which module the page is on
     if (tab.url) {
       if (/\/award/.test(tab.url)) {
