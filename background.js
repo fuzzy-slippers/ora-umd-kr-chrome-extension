@@ -42,12 +42,12 @@
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-    alert(`request.greeting is: ${request.greeting}`)
+    alert(`request.theFormAction is: ${request.theFormAction}`)
     alert(sender.tab ?
                 "from a content script:" + sender.tab.url :
                 "from the extension");
-    if (request.greeting == "hello")
-      sendResponse({farewell: "goodbye"});
+    // if (request.greeting == "hello")
+    //   sendResponse({farewell: "goodbye"});
   });
 
 /*

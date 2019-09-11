@@ -1,10 +1,12 @@
-chrome.runtime.sendMessage({greeting: "hello"}, function(response) {
-  alert(response.farewell);
-});
+alert(`detectActiveKRModuleTabContentScript running...`);
+if (document.forms["KualiForm"] && document.forms["KualiForm"].action) {
+  alert(`sending document.forms["KualiForm"].action as message with theFormAction: ${document.forms["KualiForm"].action}`)
+  chrome.runtime.sendMessage({theFormAction: `${document.forms["KualiForm"].action}`}, function(response) {
+    if (response)
+      alert(response);
+  });
+}
 
-alert(`test frames`);
-if (document.forms["KualiForm"] && document.forms["KualiForm"].action)
-  alert(`document.forms["KualiForm"].action is ${document.forms["KualiForm"].action}`)
 
 // //before trying to manipulate any of the form field values, etc make sure this page has a form named KualiForm
 // if (document.forms["KualiForm"]) {
