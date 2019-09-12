@@ -6,8 +6,26 @@
  * that called this script in the first place (with the flag to have it expose the HTML/DOM for all iframes in the page)
  */
 
-alert(`detectActiveKRModuleTabContentScript running...`);
-if (document.forms["KualiForm"] && document.forms["KualiForm"].action) {
-  alert(`sending document.forms["KualiForm"].action as message with theFormAction: ${document.forms["KualiForm"].action}`)
-  chrome.runtime.sendMessage({theFormAction: `${document.forms["KualiForm"].action}`});
-}
+ //listen for a message from the extension background.js with a property of initialMessage that is "sendActionPlease"
+ //when we get that message send a response with the action property on the HTML form "KualiForm" on the current page
+ //if one exists - if we don't find a KualiForm on the current page (such as the KR home page that does not have a form), just sent back a blank string for the fromDetectActiveKRModuleTabContentScript property/message
+ chrome.runtime.onMessage.addListener(
+   function(request, sender, sendResponse) {
+     alert(`detectActiveKRModuleTabContentScript recieved: ${JSON.stringify(request)}`)
+     if (request.initialMessage == "sendActionPlease") {
+       if (document.forms["KualiForm"] && document.forms["KualiForm"].action) {
+         sendResponse({fromDetectActiveKRModuleTabContentScript: document.forms["KualiForm"].action});
+       }
+       else {
+         sendResponse({fromDetectActiveKRModuleTabContentScript: ""});
+       }
+     }
+
+   });
+
+
+// console.info(`detectActiveKRModuleTabContentScript running...`);
+// if (document.forms["KualiForm"] && document.forms["KualiForm"].action) {
+//   console.info(`sending document.forms["KualiForm"].action as message with theFormAction: ${document.forms["KualiForm"].action}`)
+//   chrome.runtime.sendMessage({theFormAction: `${document.forms["KualiForm"].action}`});
+// }

@@ -35,19 +35,24 @@
  chrome.webNavigation.onCompleted.addListener(function(tab) {
    //now that we know we are on a KR page, call the content script that will detect the KR module and tab selected by checking the KualiForm action URL/value (will have to be passed back as a message)
    chrome.tabs.executeScript(tab.id, {file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
+
+   //test code
+   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+     chrome.tabs.sendMessage(tabs[0].id, {initialMessage: "sendActionPlease"}, function(response) {
+       alert(JSON.stringify(response));
+     });
+   });
+
    //alert("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
    updatePageIfExtensionEnabled(extensionEnabled, tab);
 }, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
 
-
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
+  // listen for messages from content scripts
+  // currently we are listening for a specific "theFormAction" property on the request that should be coming from the detectActiveKRModuleTabContentScript.js script
+  // it should be simpy sending along the KualiForm <form> action property/url on the currently loaded page, so we can figure out which KR module/tab such as the Award Module Special Review tab is currently loaded in the active tab in the browser
+  // we will need this info to decide whether to have the extension update the current KR page or now (if its one of the KR pages we have decided to change/update)
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     alert(`request.theFormAction is: ${request.theFormAction}`)
-    alert(sender.tab ?
-                "from a content script:" + sender.tab.url :
-                "from the extension");
-    // if (request.greeting == "hello")
-    //   sendResponse({farewell: "goodbye"});
   });
 
 /*
@@ -107,16 +112,9 @@ chrome.runtime.onMessage.addListener(
   *
   */
   function detectKRModuleUpdateAccordingly(tab) {
-    if (document.forms["KualiForm"]) {
-        if (document.forms["KualiForm"].action)
-          alert(`document.forms["KualiForm"].action is showing: ${document.forms["KualiForm"].action}`);
-        else
-          alert(`document.forms["KualiForm"].action not found (found to be FALSY)`);
-    }
-    else
-      alert(`document.forms["KualiForm"] itself not found (found to be FALSY)`);
 
     //make sure the tab.url is not undefined before using it to check which module the page is on
+    /* wont be using tab.URL
     if (tab.url) {
       if (/\/award/.test(tab.url)) {
         alert(`detected this page has "/award" in the URL which is: ${tab.url} `);
@@ -139,8 +137,8 @@ chrome.runtime.onMessage.addListener(
       else {
         alert(`did not detect anything, but tab.url is: ${tab.url}`);
       }
-
     }
+    */
   }
 
 
