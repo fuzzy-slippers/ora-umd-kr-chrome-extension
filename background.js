@@ -139,8 +139,8 @@
 
 
   /**
-  * check if the page being loaded is one that is in the list of KR pages we plan to modify
-  * (will allow us at the above level to skip trying to load any changes/code if we know we dont plan to modify this module/tab/page in KR)
+  * check via a regex what the current page name is (i.e. "awardHome.do") and check if it is one that is in the list of KR pages we plan to modify
+  * (we are using data from the external file (kind of like json config file) modulesTabsInKRToActivateExtension.js to load in which KR tabs/modules should be customized and the css/js files to use)
   *
   */
   function checkIfCurrentPageInListOfKRModulesTabs(tab, actionStr) {
@@ -154,11 +154,11 @@
         //since we don't want the match to include the slash before it, just for example "awardHome.do", we are using the array position 1 always, which corresponds to just the part in the regex in the parenthese, which should be the page name .do without the preceeding slash
         if (regexFirstResultArr !== null  && regexFirstResultArr[1]) {
           const doFileName = regexFirstResultArr[1];
-                     alert(`regexFirstResultArr[1] found something, it is: ${JSON.stringify(regexFirstResultArr[1])}`);
+                     // alert(`regexFirstResultArr[1] found something, it is: ${JSON.stringify(regexFirstResultArr[1])}`);
           //because the properties on the modulesTabsInKRToActivateExtension object are "awardHome.do", "awardContacts.do", etc we can just check if the current page name matches any of the properties defined since these would be the pages we want to load css, js for, otherwise it must not be one of them to do something for
           if (modulesTabsInKRToActivateExtension[doFileName]) {
-                     alert(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
-                     alert(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
+                     // alert(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
+                     // alert(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
             makeCustomizationsToCurrentPage(tab, modulesTabsInKRToActivateExtension[doFileName].cssFile, modulesTabsInKRToActivateExtension[doFileName].jsFile);
           }
         }
@@ -167,9 +167,9 @@
 
 
   /**
-  * makes the customizations specific to the award module as well as change the icon to indicate the extension is actively making changes
+  * makes the customizations specific to the currently load tab (using the passed in css and js files/paths to use) as well as change the icon to indicate the extension is actively making changes
   * overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
-  *
+  * we want to change the icon to show active right before we actually load the css and js so that we can be sure that we aren't showing someone that the extension is active when nothing is being done or showing them its not active when something is actually being customized on the current page - for this reason, this function is the only place in the extension code that will both 1) make customizations to the current page or 2) make the icon show the active color (initially decided on green)
   */
   function makeCustomizationsToCurrentPage(tab, relativeCssFilePath, relativeJsFilePath) {
     setExtensionIconActiveColor(tab);
