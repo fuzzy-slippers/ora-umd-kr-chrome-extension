@@ -5,7 +5,10 @@
   "default_locale": "en",
   "background": {
     "persistent": false,
-    "scripts": ["background.js"]
+    "scripts": [
+      "modulesTabsInKRToActivateExtension.js",
+      "background.js"
+    ]
   },
   "browser_action": {
     "default_icon": "ora_icon_off_dark_128.png"

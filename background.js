@@ -7,6 +7,7 @@
  */
 
 
+
  /**** toggle chrome extension on and off based on user clicking on extension icon ****/
  /**** reference: https://stackoverflow.com/questions/16136275/how-to-make-on-off-buttons-icons-for-a-chrome-extension ***/
  // start with the extension enabled
@@ -143,12 +144,24 @@
   *
   */
   function checkIfCurrentPageInListOfKRModulesTabs(tab, actionStr) {
-    console.log(`passed to checkIfCurrentPageInListOfKRModulesTabs, tab.id: ${tab.id} and actionStr: ${actionStr}`);
-    const krAwardModuleAwardTabRegex = /\/awardHome.do/;
-
-    if (krAwardModuleAwardTabRegex.test(actionStr)) {
-      alert(`determined we are on the award tab of the KR award module...`);
-      makeKRAwardModuleAwardTabRelatedChanges(tab);
+    // use the modulesTabsInKRToActivateExtension.js data/listing (imported in manifest.json) of KR Modules and Tabs that we want to "turn on" this extension automatically when we go to that page - decided it would be cleaner to keep this in a separate file so we could easily add KR modules/tabs in the future without having to change anything else in the code
+    // first make sure the modulesTabsInKRToActivateExtension object from modulesTabsInKRToActivateExtension.js was successfully loaded
+    if (modulesTabsInKRToActivateExtension) {
+        //use a js regular expression to pull out just the .do page name from the KualiForms action URL, for example awardHome.do or awardContacts.do
+        const pullOutPageNameWithDoFromActionUrlRegex = new RegExp('\/([a-zA-Z]{2,100}.do)', 'ig');
+        //no advantages in looking for multiple matches, there should be only one [htmlpage].do in the action URL so using exec
+        const regexFirstResultArr = pullOutPageNameWithDoFromActionUrlRegex.exec(actionStr);
+        //since we don't want the match to include the slash before it, just for example "awardHome.do", we are using the array position 1 always, which corresponds to just the part in the regex in the parenthese, which should be the page name .do without the preceeding slash
+        if (regexFirstResultArr !== null  && regexFirstResultArr[1]) {
+          const doFileName = regexFirstResultArr[1];
+                     alert(`regexFirstResultArr[1] found something, it is: ${JSON.stringify(regexFirstResultArr[1])}`);
+          //because the properties on the modulesTabsInKRToActivateExtension object are "awardHome.do", "awardContacts.do", etc we can just check if the current page name matches any of the properties defined since these would be the pages we want to load css, js for, otherwise it must not be one of them to do something for
+          if (modulesTabsInKRToActivateExtension[doFileName]) {
+                     alert(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
+                     alert(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
+            makeCustomizationsToCurrentPage(tab, modulesTabsInKRToActivateExtension[doFileName].cssFile, modulesTabsInKRToActivateExtension[doFileName].jsFile);
+          }
+        }
     }
   }
 
@@ -158,130 +171,12 @@
   * overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
   *
   */
-  function makeKRAwardModuleAwardTabRelatedChanges(tab) {
-     //TODO: determine tab inside award module and based on that call function to update icon color and css/js based on tab selected (do nothing including leave icon yellow for tabs that do not have any custom overlays)
-     setExtensionIconActiveColor(tab);
-     chrome.tabs.insertCSS(tab.id, {file: "/awdModule/awardTabStyles.css", allFrames: true});
-     chrome.tabs.executeScript(tab.id, {file: "/awdModule/awardTabContentScript.js", allFrames: true});
+  function makeCustomizationsToCurrentPage(tab, relativeCssFilePath, relativeJsFilePath) {
+    setExtensionIconActiveColor(tab);
+    if (relativeCssFilePath) {
+      chrome.tabs.insertCSS(tab.id, {file: relativeCssFilePath, allFrames: true});
+    }
+    if (relativeJsFilePath) {
+      chrome.tabs.executeScript(tab.id, {file: relativeJsFilePath, allFrames: true});
+    }
   }
-
-
-    // make sure the tab.url is not undefined before using it to check which module the page is on
-    //
-    // /* wont be using tab.URL
-    // if (tab.url) {
-    //   if (/\/award/.test(tab.url)) {
-    //     console.log(`detected this page has /award in the URL which is: ${tab.url} `);
-    //     awdModuleDetectTabAndUpdateAccordingly(tab);
-    //   }
-    //   else if (/\/time/.test(tab.url)) {
-    //         //TODO: Need to separate out the Time and Money CSS and Javascript into separate files and a function to detect the tab chosen needs to be created so its only imported on the one tab that needs it to run
-    //         console.log(`detected this page has "\time" in the URL which is: ${tab.url} `);
-    //   }
-    //   //institutional
-    //   else if (/\/institutional/.test(tab.url)) {
-    //         console.log(`detected this page has "\institutional" in the URL which is: ${tab.url} `);
-    //   }
-    //   else if (/\/proposalDevelopment/.test(tab.url)) {
-    //         console.log(`detected this page has "\proposalDevelopment" in the URL which is: ${tab.url} `);
-    //   }
-    //   else if (/\/sub/.test(tab.url)) {
-    //         console.log(`detected this page has "\sub" in the URL which is: ${tab.url} `);
-    //   }
-    //   else {
-    //     console.log(`did not detect anything, but tab.url is: ${tab.url}`);
-    //   }
-    // }
-    // */
-
-
-
-
-
-
-
-
-
-
-//var nav = new NavigationCollector();
-
-
-/*
-  chrome.webNavigation.onCompleted.addListener(function(data) {
-    //console.log("alerting webNavigation.onCompleted for" + JSON.stringify(data));
-
-    //const retVal = updateCss();
-
-    if (typeof data)
-      console.log("data: " + JSON.stringify(data));
-    else
-      console.error("looks like an error, data: " + JSON.stringify(data));
-  });
-  */
-
-
-
-  // /**
-  //  * executes the js code to update/override the CSS of the KR page
-  //  *
-  //  */
-  // function updateCss() {
-  //   console.log("inside updateCss()");
-  //
-  //   const querySelectorWiki = document.querySelector('#mp-topbanner > div > div:nth-child(1)');
-  //   if (querySelectorWiki) {
-  //     console.log(`querySelectorWiki: ${querySelectorWiki.innerHTML}`);
-  //     querySelectorWiki.style.color = "green";
-  //   }
-  //
-  //   const querySelectorHead = document.querySelector('head');
-  //   if (querySelectorHead) {
-  //     console.log(`querySelectorHead: ${querySelectorHead.innerHTML}`);
-  //   }
-  //
-  //   document.querySelector('body').style.backgroundColor = "purple";
-  //   document.body.style.backgroundColor = "purple";
-  //   document.bgColor = "orange";
-  //   console.log("just tried to switch the background to purple, got here");
-  //
-  //
-  //
-  //
-  //
-  //   // var mainHeader = document.querySelector('#main-header');
-  //   // console.log(`mainHeader: ${mainHeader.innerText}`);
-  //
-  //
-  //
-  //
-  //   // console.log(`document: ${document.innerText}`);
-  //
-  //   // const footer = document.querySelector("#Uif-GlobalApplicationFooter");
-  //   // console.log(`footer: ${footer.innerText}`);
-  //   // if (footer) {
-  //   //   footer.style.backgroundColor = "red";
-  //   // }
-  //   //
-  //   // const footerStyle2 = document.querySelector('div#footer-copyright');
-  //   // console.log(`footerStyle2: ${JSON.stringify(footerStyle2)}`);
-  //   // if (footerStyle2) {
-  //   //   footerStyle2.style.backgroundColor = "red";
-  //   // }
-  //   //
-  //   //
-  //   //
-  //   // const anticipatedAmtRow = document.querySelector("#tab-DetailsDates\\:TimeMoney-div > table > tbody > tr:nth-child(5)");
-  //   // console.log(`anticipatedAmtRow: ${JSON.stringify(anticipatedAmtRow)}`);
-  //   // if (anticipatedAmtRow) {
-  //   //   anticipatedAmtRow.style.visibility = "hidden";
-  //   // }
-  //   // //document.querySelector("#tab-DetailsDates\\:TimeMoney-div > table > tbody > tr:nth-child(5)").style.visibility = "hidden";
-  //   // document.body.style.backgroundColor = "lightgray";
-  //
-  // }
-
-// Reset the navigation state on startup. We only want to collect data within a
-// session.
-// chrome.runtime.onStartup.addListener(function() {
-//   nav.resetDataStorage();
-// });

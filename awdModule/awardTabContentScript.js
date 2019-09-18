@@ -1,3 +1,4 @@
+alert(`awardTabContentScript.js about to load/update page`);
 //before trying to manipulate any of the form field values, etc make sure this page has a form named KualiForm
 if (document.forms["KualiForm"]) {
 
