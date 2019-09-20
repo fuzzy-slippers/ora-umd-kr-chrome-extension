@@ -57,17 +57,13 @@
         if (tabs[0]) {
           const currentTab = tabs[0];
           //console.log(`currentTab: ${JSON.stringify(currentTab)});
-
+          console.log(`here's the info found when querying for the currentTab: ${JSON.stringify(currentTab)}`)
           console.log(`request.theFormAction is: ${request.theFormAction} - we put it in the variable formActionFromMsg: ${formActionFromMsg}`);
           //now that we know the current tab and the form action URL, pass these along to a function to check if its one of the valid KR modules/tabs for the extension to auto-activate
           checkIfCurrentPageInListOfKRModulesTabs(currentTab, formActionFromMsg);
-
         }
       });
-
     }
-
-
   });
 
 /*
@@ -82,9 +78,9 @@
   * then for the second part of actually doing something with action property which tells us the current KR module/tab being viewed, see the _ listener function above which is fired when we actually get the information back in the form of a message sent from the content script, which at that point things can keep going and we can use that info to decide if we turn the extension on based on the current KR page/tab
   */
   function initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn(tab) {
-    console.log(`calledinitiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn`);
+    console.log(`calledinitiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn and the it is using the getTabId(tab) as the first executescripts param, which shows: ${getTabId(tab)}`);
     //now that we know we are on a KR page, call the content script that will detect the KR module and tab selected by checking the KualiForm action URL/value (will have to be passed back as a message)
-    chrome.tabs.executeScript(tab.id, {file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
+    chrome.tabs.executeScript(getTabId(tab), {file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
   }
 
  /**
@@ -118,22 +114,24 @@
  * change the extension icon to green to indicate its active on the current page
  */
  function setExtensionIconActiveColor(tab) {
-   console.log(`about to set icon to green (inside setExtensionIconActiveColor)`);
-   chrome.browserAction.setIcon({path: "ora_icon_128.png", tabId:tab.id});
+   console.log(`about to set icon to green (inside setExtensionIconActiveColor) using getTabId(tab) which is: ${getTabId(tab)}`);
+   chrome.browserAction.setIcon({path: "ora_icon_128.png", tabId:getTabId(tab)});
  }
 
  /*
   * change the extension icon to yellow to indicate we are on a KR page, but it's not doing anything to the current page
   */
   function setExtensionIconInactiveColor(tab) {
-    chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:tab.id});
+    console.log(`inside setExtensionIconInactiveColor the tab passed in shows: ${JSON.stringify(tab)} and also the getTabId(tab) being used is showing: ${getTabId(tab)}`);
+    console.log(`about to set icon to yellow (inside setExtensionIconInactiveColor)`);
+    chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:getTabId(tab)});
   }
 
   /*
    * change the extension icon to dark to indicate we are on a non-KR page or it's been disabled
    */
    function setExtensionIconDisabledColor(tab) {
-     chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png", tabId:tab.id});
+     chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png", tabId:getTabId(tab)});
    }
 
 
@@ -154,11 +152,11 @@
         //since we don't want the match to include the slash before it, just for example "awardHome.do", we are using the array position 1 always, which corresponds to just the part in the regex in the parenthese, which should be the page name .do without the preceeding slash
         if (regexFirstResultArr !== null  && regexFirstResultArr[1]) {
           const doFileName = regexFirstResultArr[1];
-                     // alert(`regexFirstResultArr[1] found something, it is: ${JSON.stringify(regexFirstResultArr[1])}`);
+                     console.log(`regexFirstResultArr[1] found something, it is: ${JSON.stringify(regexFirstResultArr[1])}`);
           //because the properties on the modulesTabsInKRToActivateExtension object are "awardHome.do", "awardContacts.do", etc we can just check if the current page name matches any of the properties defined since these would be the pages we want to load css, js for, otherwise it must not be one of them to do something for
           if (modulesTabsInKRToActivateExtension[doFileName]) {
-                     // alert(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
-                     // alert(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
+                     console.log(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
+                     console.log(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
             makeCustomizationsToCurrentPage(tab, modulesTabsInKRToActivateExtension[doFileName].cssFile, modulesTabsInKRToActivateExtension[doFileName].jsFile);
           }
         }
@@ -172,11 +170,38 @@
   * we want to change the icon to show active right before we actually load the css and js so that we can be sure that we aren't showing someone that the extension is active when nothing is being done or showing them its not active when something is actually being customized on the current page - for this reason, this function is the only place in the extension code that will both 1) make customizations to the current page or 2) make the icon show the active color (initially decided on green)
   */
   function makeCustomizationsToCurrentPage(tab, relativeCssFilePath, relativeJsFilePath) {
+    console.log(`makeCustomizationsToCurrentPage is sending getTabId(tab) into insertCSS and executescript, sending in getTabId(tab) value: ${getTabId(tab)} - the full tab object shows: ${JSON.stringify(tab)}`);
     setExtensionIconActiveColor(tab);
     if (relativeCssFilePath) {
-      chrome.tabs.insertCSS(tab.id, {file: relativeCssFilePath, allFrames: true});
+      chrome.tabs.insertCSS(getTabId(tab), {file: relativeCssFilePath, allFrames: true});
     }
     if (relativeJsFilePath) {
-      chrome.tabs.executeScript(tab.id, {file: relativeJsFilePath, allFrames: true});
+      chrome.tabs.executeScript(getTabId(tab), {file: relativeJsFilePath, allFrames: true});
     }
   }
+
+  /**
+   * Pull out the tab id of a tab oject regardless of the different types of tab objects generated by chrome extension functions that keep the tab ids in different places. This is a simple utility but we were having "tab" objects passed into functions that contained different properties for the tab ids, so to keep things simple this utility function should look for the various properties that might contain the tab id for various different tab object types
+   *
+   */
+   function getTabId(tab) {
+     // make sure something was passed in
+     if (tab) {
+       //look for the tab.id property, which seems to be used by the chrome object depicting actual browser tabs
+       if (tab.id) {
+         return tab.id
+       }
+       //look for the tab.tabId property, which seems to be used by the chrome object depicting iframes
+       else if (tab.tabId) {
+         return tab.tabId;
+       }
+       //no properties in any of the formats we know of for tab Ids, so just returning undefined to indicate we couldnt find the info
+       else {
+         return undefined;
+       }
+     }
+     //if the object is invalid, return undefined
+     else {
+       return undefined;
+     }
+   }

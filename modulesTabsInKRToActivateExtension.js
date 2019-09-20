@@ -3,12 +3,12 @@ const modulesTabsInKRToActivateExtension = {
     "cssFile": "/awdModule/awardTabStyles.css",
     "jsFile": "/awdModule/awardTabContentScript.js"
   },
-  "NOTSETYET.do": {
-    "cssFile": "/awdModule/awardTabStyles.css",
-    "jsFile": "/awdModule/awardTabContentScript.js"
+  "timeAndMoney.do": {
+    "cssFile": "/tnmModule/timeAndMoneyTabContentScript.css",
+    "jsFile": "/tnmModule/timeAndMoneyTabContentScript.js"
   },
   "NOTSETYET2.do": {
-    "cssFile": "/awdModule/awardTabStyles.css",
-    "jsFile": "/awdModule/awardTabContentScript.js"
+    "cssFile": "/whichone/whatever.css",
+    "jsFile": "/whichone/whatever.js"
   },
 }
