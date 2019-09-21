@@ -2,59 +2,55 @@
 // found in the LICENSE file.
 
 /**
- * @filedescription Initializes the extension's background page.
- * executes the js code to update/override the CSS of the KR page
- */
+* @filedescription Initializes the extension's background page.
+* executes the js code to update/override the CSS of the KR page
+*/
 
 
 
- /**** toggle chrome extension on and off based on user clicking on extension icon with global background.js var ****/
- /**** reference: https://stackoverflow.com/questions/16136275/how-to-make-on-off-buttons-icons-for-a-chrome-extension ***/
- // start with the extension enabled
- var extensionEnabled = true;
+/**** toggle chrome extension on and off based on user clicking on extension icon with global background.js var ****/
+/**** reference: https://stackoverflow.com/questions/16136275/how-to-make-on-off-buttons-icons-for-a-chrome-extension ***/
+// start with the extension enabled
+var extensionEnabled = true;
 
- /*
-  * ::Listeners::
-  */
+/*
+* ::Listeners::
+*/
 
- //add a listener that when the button is clicked toggles the extension off and the second time on, then off, etc
- chrome.browserAction.onClicked.addListener(function(tab) {
-   console.log(`click on icon detected via chrome.browserAction.onClicked.addListener`);
-   extensionEnabled = !extensionEnabled;
-   //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
-   setIconInactiveOrDisabled(extensionEnabled);
-   //start the process to determine if the extension should be turned on (make sure extension is enabled + that we are on a KR page/tab that it should be turned on)
-   updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
- });
+//add a listener that when the button is clicked toggles the extension off and the second time on, then off, etc
+chrome.browserAction.onClicked.addListener(function(tab) {
+ console.log(`click on icon detected via chrome.browserAction.onClicked.addListener`);
+ extensionEnabled = !extensionEnabled;
+ initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+});
 
 //add a listener for each reload of the page (as the extension will need to run on each reload)
 //but only run at all if it matches specific URLs (to keep it specific looking for kuali.co /res or /dashboard...later may decide to just have it match any kuali.co URL, it's a judgement call on how specific we want to be)
 chrome.webNavigation.onCompleted.addListener(function(tab) {
-  setIconInactiveOrDisabled(extensionEnabled);
-  updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 }, {});
 
+// switch tabs - may posssibly use ['*://*/*foo.bar', '*://*/*foo.bar?*'] see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns
+chrome.tabs.onActivated.addListener(function(activeInfo) {
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+});
 
-  // listen for messages from content scripts
-  // the message
-  // currently we are listening for a specific "theFormAction" property on the request that should be coming from the detectActiveKRModuleTabContentScript.js script
-  // it should be simpy sending along the KualiForm <form> action property/url on the currently loaded page, so we can figure out which KR module/tab such as the Award Module Special Review tab is currently loaded in the active tab in the browser
-  // we will need this info to decide whether to have the extension update the current KR page or now (if its one of the KR pages we have decided to change/update)
-  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    console.log(`chrome.runtime.onMessage.addListener returned some message`);
-    //check the type of message received based on the response property - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding
-    if (request.theFormAction) {
-      const formActionFromMsg = request.theFormAction;
-      checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
-    }
-  });
 
-  // switch tabs - may posssibly use ['*://*/*foo.bar', '*://*/*foo.bar?*'] see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns
-  chrome.tabs.onActivated.addListener(function(activeInfo) {
-      //alert(`chrome.tabs.onActivated listener triggered for: ${JSON.stringify(activeInfo)}, so setting icon yellow/gray first`);
-      setIconInactiveOrDisabled(extensionEnabled);
-      updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
-  });
+// listen for messages from content scripts
+// the message
+// currently we are listening for a specific "theFormAction" property on the request that should be coming from the detectActiveKRModuleTabContentScript.js script
+// it should be simpy sending along the KualiForm <form> action property/url on the currently loaded page, so we can figure out which KR module/tab such as the Award Module Special Review tab is currently loaded in the active tab in the browser
+// we will need this info to decide whether to have the extension update the current KR page or now (if its one of the KR pages we have decided to change/update)
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  console.log(`chrome.runtime.onMessage.addListener returned some message`);
+  //check the type of message received based on the response property - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding
+  if (request.theFormAction) {
+    const formActionFromMsg = request.theFormAction;
+    checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+  }
+});
+
+
 
 /*
  * ::Functions::
@@ -114,6 +110,13 @@ chrome.webNavigation.onCompleted.addListener(function(tab) {
        updatePageIfExtensionEnabled(extensionEnabled);
      }
     });
+  }
+
+  function initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, urlPatterns) {
+    //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
+    setIconInactiveOrDisabled(extensionEnabled);
+    //start the process to determine if the extension should be turned on (check that extension is enabled, that we are on a KR page and that the current KR module/tab being displayed is one in the list that should have the exention enabled)
+    updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns);
   }
 
 
