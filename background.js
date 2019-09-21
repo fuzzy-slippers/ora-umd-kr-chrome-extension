@@ -24,23 +24,8 @@
    //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
    setIconInactiveOrDisabled(extensionEnabled);
    //start the process to determine if the extension should be turned on (make sure extension is enabled + that we are on a KR page/tab that it should be turned on)
-   updatePageIfExtensionEnabled(extensionEnabled);
+   updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
  });
-
-
-//  //add a listener that when going to any new page/refreshing page, etc, if the extension is currently clicked on, default the icon to the inactive color but if it's clicked off default the icon to the disabled color
-//  chrome.webNavigation.onBeforeNavigate.addListener(function(tab) {
-//    console.log(`detected new page/refresh via chrome.webNavigation.onBeforeNavigate.addListener, with a tab object that shows: ${JSON.stringify(tab)}`);
-//    setIconInactiveOrDisabled(extensionEnabled);
-// }, {});
-
-//  //add a listener for each reload of the page (as the extension will need to run on each reload)
-//  //but only run at all if it matches specific URLs (to keep it specific looking for kuali.co /res or /dashboard...later may decide to just have it match any kuali.co URL, it's a judgement call on how specific we want to be)
-//  chrome.webNavigation.onCompleted.addListener(function(tab) {
-//    //start the process to determine if the extension should be turned on (make sure extension is enabled + that we are on a KR page/tab that it should be turned on)
-//    updatePageIfExtensionEnabled(extensionEnabled, tab);
-//    //console.log("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
-// }, {{url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]}});
 
 //add a listener for each reload of the page (as the extension will need to run on each reload)
 //but only run at all if it matches specific URLs (to keep it specific looking for kuali.co /res or /dashboard...later may decide to just have it match any kuali.co URL, it's a judgement call on how specific we want to be)
@@ -61,25 +46,6 @@ chrome.webNavigation.onCompleted.addListener(function(tab) {
     if (request.theFormAction) {
       const formActionFromMsg = request.theFormAction;
       checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
-      // //determine the currently active tab info/object (since this is a listener, it doesn't have this info)
-      // chrome.tabs.query({
-      // "active":        true,
-      // "currentWindow": true,
-      // "status":        "complete",
-      // "windowType":    "normal",
-      // "url": "https://*.kuali.co/*"
-      // }, function(tabs) {
-      //   console.log(`inside the query function to get current tab: ${JSON.stringify(tabs)}`);
-      //   //make sure it returned something when querying for the current active tab
-      //   if (tabs[0]) {
-      //     const currentTab = tabs[0];
-      //     //console.log(`currentTab: ${JSON.stringify(currentTab)});
-      //     console.log(`here's the info found when querying for the currentTab: ${JSON.stringify(currentTab)}`)
-      //     console.log(`request.theFormAction is: ${request.theFormAction} - we put it in the variable formActionFromMsg: ${formActionFromMsg}`);
-      //     //now that we know the current tab and the form action URL, pass these along to a function to check if its one of the valid KR modules/tabs for the extension to auto-activate
-      //     checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
-      //   }
-      // });
     }
   });
 
@@ -90,33 +56,10 @@ chrome.webNavigation.onCompleted.addListener(function(tab) {
       updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
   });
 
-  // // new URL loaded in either new or existing tab
-  // chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  //     //alert(`chrome.tabs.onActivated listener triggered for: ${JSON.stringify(activeInfo)}, so setting icon yellow/gray first`);
-  //     setIconInactiveOrDisabled(extensionEnabled);
-  //     updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
-  // });
-
 /*
  * ::Functions::
  */
 
-function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) {
-  chrome.tabs.query({
-  "active":        true,
-  "currentWindow": true,
-  "status":        "complete",
-  "windowType":    "normal",
-  "url": urlPatterns
-  }, function(tabs) {
-   //if the url pattern doesnt match KR as specified in the url property above, this function will run but with an empty array, so don't do anything for these pages - this makes sure it returned something when querying for the current active tab
-   if (tabs && tabs[0]) {
-     //no longer care about any of the info about the current tab because everything defaulting to current tab anyway //const currentTab = tabs[0];
-     //alert(`about to call updatePageIfExtensionEnabled passing in currentTab: ${JSON.stringify(currentTab)}`)
-     updatePageIfExtensionEnabled(extensionEnabled);
-   }
-  });
-}
 
  /**
   * helps determine which module/tab in KR the user is currently viewing in the active browser tab in Google chrome
@@ -158,13 +101,26 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
     }
   }
 
+  function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) {
+    chrome.tabs.query({
+    "active":        true,
+    "currentWindow": true,
+    "status":        "complete",
+    "windowType":    "normal",
+    "url": urlPatterns
+    }, function(tabs) {
+     //if the url pattern doesnt match KR as specified in the url property above, this function will run but with an empty array, so don't do anything for these pages - this makes sure it returned something when querying for the current active tab
+     if (tabs && tabs[0]) {
+       updatePageIfExtensionEnabled(extensionEnabled);
+     }
+    });
+  }
 
 
 /*
  * change the extension icon to green to indicate its active on the current page
  */
  function setExtensionIconActiveColor() {
-   //console.log(`about to set icon to green (inside setExtensionIconActiveColor) using getTabId(tab) which is: ${getTabId(tab)}`);
    chrome.browserAction.setIcon({path: "ora_icon_128.png"});
  }
 
@@ -175,34 +131,6 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
     //console.log(`inside setExtensionIconInactiveColor the tab passed in shows: ${JSON.stringify(tab)} and also the getTabId(tab) being used is showing: ${getTabId(tab)}`);
     console.log(`about to set icon to yellow (inside setExtensionIconInactiveColor)`);
     chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png"});
-    // we were running into issue where the tab we were trying to update the icon for came back with an error that it did not exist, so doing a get of the tab and only executing the update of the icon if the tab with the tab id specified is found to exist
-    // chrome.tabs.get(getTabId(tab), function(tab) {
-    //   if (chrome.runtime.lastError) {
-    //       console.log(`chrome.runtime.lastError was thrown with message: ${chrome.runtime.lastError.message}`);
-    //   } else {
-    //     console.log(`chrome.runtime.lastError NOT detected, so going ahead and using the tab`);
-    //     console.log(`inside chrome.tabs.get async call to make sure the tab existed - it did and next we will call chrome.browserAction.setIcon yellow on tab ${JSON.stringify(tab)} using tab id determined to be: ${getTabId(tab)}`);
-    //     chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:getTabId(tab)});
-    //     console.log(`just did the chrome.browserAction.setIcon call to make the icon yellow, if we got here, should be showing yellow`);
-    //   }
-    // });
-
-    // chrome.tabs.query({
-    // "active":        true,
-    // "currentWindow": true,
-    // "status":        "complete",
-    // "windowType":    "normal"
-    // }, function(tab) {
-    //   if (chrome.runtime.lastError) {
-    //       console.log(`chrome.runtime.lastError was thrown with message: ${chrome.runtime.lastError.message}`);
-    //   } else {
-    //     console.log(`chrome.runtime.lastError NOT detected, so going ahead and using the tab`);
-    //     console.log(`inside chrome.tabs.get async call to make sure the tab existed - it did and next we will call chrome.browserAction.setIcon yellow on tab ${JSON.stringify(tab)} using tab id determined to be: ${getTabId(tab)}`);
-    //     chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png"});
-    //     console.log(`just did the chrome.browserAction.setIcon call to make the icon yellow, if we got here, should be showing yellow`);
-    //   }
-    // });
-
   }
 
   /*
@@ -283,41 +211,3 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
        return undefined;
      }
    }
-
-
-
-   /* may need later
-    function setExtensionIconInactiveColor(tab) {
-      console.log(`inside setExtensionIconInactiveColor the tab passed in shows: ${JSON.stringify(tab)} and also the getTabId(tab) being used is showing: ${getTabId(tab)}`);
-      console.log(`about to set icon to yellow (inside setExtensionIconInactiveColor)`);
-      // we were running into issue where the tab we were trying to update the icon for came back with an error that it did not exist, so doing a get of the tab and only executing the update of the icon if the tab with the tab id specified is found to exist
-      // chrome.tabs.get(getTabId(tab), function(tab) {
-      //   if (chrome.runtime.lastError) {
-      //       console.log(`chrome.runtime.lastError was thrown with message: ${chrome.runtime.lastError.message}`);
-      //   } else {
-      //     console.log(`chrome.runtime.lastError NOT detected, so going ahead and using the tab`);
-      //     console.log(`inside chrome.tabs.get async call to make sure the tab existed - it did and next we will call chrome.browserAction.setIcon yellow on tab ${JSON.stringify(tab)} using tab id determined to be: ${getTabId(tab)}`);
-      //     chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:getTabId(tab)});
-      //     console.log(`just did the chrome.browserAction.setIcon call to make the icon yellow, if we got here, should be showing yellow`);
-      //   }
-      // });
-
-      chrome.tabs.query({
-      "active":        true,
-      "currentWindow": true,
-      "status":        "complete",
-      "windowType":    "normal"
-      }, function(tab) {
-        if (chrome.runtime.lastError) {
-            console.log(`chrome.runtime.lastError was thrown with message: ${chrome.runtime.lastError.message}`);
-        } else {
-          console.log(`chrome.runtime.lastError NOT detected, so going ahead and using the tab`);
-          console.log(`inside chrome.tabs.get async call to make sure the tab existed - it did and next we will call chrome.browserAction.setIcon yellow on tab ${JSON.stringify(tab)} using tab id determined to be: ${getTabId(tab)}`);
-          chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png", tabId:getTabId(tab)});
-          console.log(`just did the chrome.browserAction.setIcon call to make the icon yellow, if we got here, should be showing yellow`);
-        }
-      });
-
-    }
-
-    */
