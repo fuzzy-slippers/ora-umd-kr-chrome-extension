@@ -15,9 +15,12 @@
   },
   "permissions":    [
     "activeTab",
-    "https://*.kuali.co/*",
-    "tabs"
-
+    "tabs",
+    "https://*.kuali.co/res/*",
+    "https://*.kuali.co/dashboard/*",
+    "webNavigation",
+    "https://*.kuali.co/res/*",
+    "https://*.kuali.co/dashboard/*"
   ],
   "icons": {
     "128": "ora_icon_128.png"

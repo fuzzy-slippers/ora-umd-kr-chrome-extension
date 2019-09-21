@@ -24,7 +24,7 @@
    //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
    setIconInactiveOrDisabled(extensionEnabled);
    //start the process to determine if the extension should be turned on (make sure extension is enabled + that we are on a KR page/tab that it should be turned on)
-   updatePageIfExtensionEnabled(extensionEnabled, tab);
+   updatePageIfExtensionEnabled(extensionEnabled);
  });
 
 
@@ -33,14 +33,22 @@
 //    console.log(`detected new page/refresh via chrome.webNavigation.onBeforeNavigate.addListener, with a tab object that shows: ${JSON.stringify(tab)}`);
 //    setIconInactiveOrDisabled(extensionEnabled);
 // }, {});
-//
+
 //  //add a listener for each reload of the page (as the extension will need to run on each reload)
 //  //but only run at all if it matches specific URLs (to keep it specific looking for kuali.co /res or /dashboard...later may decide to just have it match any kuali.co URL, it's a judgement call on how specific we want to be)
 //  chrome.webNavigation.onCompleted.addListener(function(tab) {
 //    //start the process to determine if the extension should be turned on (make sure extension is enabled + that we are on a KR page/tab that it should be turned on)
 //    updatePageIfExtensionEnabled(extensionEnabled, tab);
 //    //console.log("webNavigation.onCompleted URL matched hostSuffix: kuali.co, pathContains: res");
-// }, {url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]});
+// }, {{url: [{hostSuffix: "kuali.co", pathContains: "res"},{hostSuffix: "kuali.co", pathContains: "dashboard"}]}});
+
+//add a listener for each reload of the page (as the extension will need to run on each reload)
+//but only run at all if it matches specific URLs (to keep it specific looking for kuali.co /res or /dashboard...later may decide to just have it match any kuali.co URL, it's a judgement call on how specific we want to be)
+chrome.webNavigation.onCompleted.addListener(function(tab) {
+  setIconInactiveOrDisabled(extensionEnabled);
+  updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
+}, {});
+
 
   // listen for messages from content scripts
   // the message
@@ -52,25 +60,26 @@
     //check the type of message received based on the response property - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding
     if (request.theFormAction) {
       const formActionFromMsg = request.theFormAction;
-      //determine the currently active tab info/object (since this is a listener, it doesn't have this info)
-      chrome.tabs.query({
-      "active":        true,
-      "currentWindow": true,
-      "status":        "complete",
-      "windowType":    "normal",
-      "url": "https://*.kuali.co/*"
-      }, function(tabs) {
-        console.log(`inside the query function to get current tab: ${JSON.stringify(tabs)}`);
-        //make sure it returned something when querying for the current active tab
-        if (tabs[0]) {
-          const currentTab = tabs[0];
-          //console.log(`currentTab: ${JSON.stringify(currentTab)});
-          console.log(`here's the info found when querying for the currentTab: ${JSON.stringify(currentTab)}`)
-          console.log(`request.theFormAction is: ${request.theFormAction} - we put it in the variable formActionFromMsg: ${formActionFromMsg}`);
-          //now that we know the current tab and the form action URL, pass these along to a function to check if its one of the valid KR modules/tabs for the extension to auto-activate
-          checkIfCurrentPageInListOfKRModulesTabs(currentTab, formActionFromMsg);
-        }
-      });
+      checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+      // //determine the currently active tab info/object (since this is a listener, it doesn't have this info)
+      // chrome.tabs.query({
+      // "active":        true,
+      // "currentWindow": true,
+      // "status":        "complete",
+      // "windowType":    "normal",
+      // "url": "https://*.kuali.co/*"
+      // }, function(tabs) {
+      //   console.log(`inside the query function to get current tab: ${JSON.stringify(tabs)}`);
+      //   //make sure it returned something when querying for the current active tab
+      //   if (tabs[0]) {
+      //     const currentTab = tabs[0];
+      //     //console.log(`currentTab: ${JSON.stringify(currentTab)});
+      //     console.log(`here's the info found when querying for the currentTab: ${JSON.stringify(currentTab)}`)
+      //     console.log(`request.theFormAction is: ${request.theFormAction} - we put it in the variable formActionFromMsg: ${formActionFromMsg}`);
+      //     //now that we know the current tab and the form action URL, pass these along to a function to check if its one of the valid KR modules/tabs for the extension to auto-activate
+      //     checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+      //   }
+      // });
     }
   });
 
@@ -78,15 +87,15 @@
   chrome.tabs.onActivated.addListener(function(activeInfo) {
       //alert(`chrome.tabs.onActivated listener triggered for: ${JSON.stringify(activeInfo)}, so setting icon yellow/gray first`);
       setIconInactiveOrDisabled(extensionEnabled);
-      updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, "https://*.kuali.co/*");
+      updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
   });
 
-  // new URL loaded in either new or existing tab
-  chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-      //alert(`chrome.tabs.onActivated listener triggered for: ${JSON.stringify(activeInfo)}, so setting icon yellow/gray first`);
-      setIconInactiveOrDisabled(extensionEnabled);
-      updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, "https://*.kuali.co/*");
-  });
+  // // new URL loaded in either new or existing tab
+  // chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  //     //alert(`chrome.tabs.onActivated listener triggered for: ${JSON.stringify(activeInfo)}, so setting icon yellow/gray first`);
+  //     setIconInactiveOrDisabled(extensionEnabled);
+  //     updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
+  // });
 
 /*
  * ::Functions::
@@ -102,9 +111,9 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
   }, function(tabs) {
    //if the url pattern doesnt match KR as specified in the url property above, this function will run but with an empty array, so don't do anything for these pages - this makes sure it returned something when querying for the current active tab
    if (tabs && tabs[0]) {
-     const currentTab = tabs[0];
+     //no longer care about any of the info about the current tab because everything defaulting to current tab anyway //const currentTab = tabs[0];
      //alert(`about to call updatePageIfExtensionEnabled passing in currentTab: ${JSON.stringify(currentTab)}`)
-     updatePageIfExtensionEnabled(extensionEnabled, currentTab);
+     updatePageIfExtensionEnabled(extensionEnabled);
    }
   });
 }
@@ -116,10 +125,10 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
   * This function does part 1) it loads the special content script we created that just reads the HTML <form> element with the name "KualiForm" of the current page and sends back the URL of the "action" property of that form (with the flag set for the content script to allow it access)
   * then for the second part of actually doing something with action property which tells us the current KR module/tab being viewed, see the _ listener function above which is fired when we actually get the information back in the form of a message sent from the content script, which at that point things can keep going and we can use that info to decide if we turn the extension on based on the current KR page/tab
   */
-  function initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn(tab) {
-    console.log(`calledinitiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn and the it is using the getTabId(tab) as the first executescripts param, which shows: ${getTabId(tab)}`);
+  function initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() {
+    console.log(`calledinitiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn`);
     //now that we know we are on a KR page, call the content script that will detect the KR module and tab selected by checking the KualiForm action URL/value (will have to be passed back as a message)
-    chrome.tabs.executeScript(getTabId(tab), {file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
+    chrome.tabs.executeScript({file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
   }
 
  /**
@@ -142,10 +151,10 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
   * and have it further check if it's a module/tab that should have changes made to the page (if not will still show disabled)
   * if extension determined to be clicked off by the user, dont need to do anything as the icon shows the off colors by default until it is explicitly turned on based on the KR module, etc
   */
-  function updatePageIfExtensionEnabled(extensionEnabled, tab) {
+  function updatePageIfExtensionEnabled(extensionEnabled) {
     if (extensionEnabled){
       console.log(`called updatePageIfExtensionEnabled and determined extensionEnabled=true`);
-      initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn(tab);
+      initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn();
     }
   }
 
@@ -210,7 +219,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
   * (we are using data from the external file (kind of like json config file) modulesTabsInKRToActivateExtension.js to load in which KR tabs/modules should be customized and the css/js files to use)
   *
   */
-  function checkIfCurrentPageInListOfKRModulesTabs(tab, actionStr) {
+  function checkIfCurrentPageInListOfKRModulesTabs(actionStr) {
     // use the modulesTabsInKRToActivateExtension.js data/listing (imported in manifest.json) of KR Modules and Tabs that we want to "turn on" this extension automatically when we go to that page - decided it would be cleaner to keep this in a separate file so we could easily add KR modules/tabs in the future without having to change anything else in the code
     // first make sure the modulesTabsInKRToActivateExtension object from modulesTabsInKRToActivateExtension.js was successfully loaded
     if (modulesTabsInKRToActivateExtension) {
@@ -226,7 +235,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
           if (modulesTabsInKRToActivateExtension[doFileName]) {
                      console.log(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
                      console.log(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
-            makeCustomizationsToCurrentPage(tab, modulesTabsInKRToActivateExtension[doFileName].cssFile, modulesTabsInKRToActivateExtension[doFileName].jsFile);
+            makeCustomizationsToCurrentPage(modulesTabsInKRToActivateExtension[doFileName].cssFile, modulesTabsInKRToActivateExtension[doFileName].jsFile);
           }
         }
     }
@@ -238,14 +247,14 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
   * overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
   * we want to change the icon to show active right before we actually load the css and js so that we can be sure that we aren't showing someone that the extension is active when nothing is being done or showing them its not active when something is actually being customized on the current page - for this reason, this function is the only place in the extension code that will both 1) make customizations to the current page or 2) make the icon show the active color (initially decided on green)
   */
-  function makeCustomizationsToCurrentPage(tab, relativeCssFilePath, relativeJsFilePath) {
-    console.log(`makeCustomizationsToCurrentPage is sending getTabId(tab) into insertCSS and executescript, sending in getTabId(tab) value: ${getTabId(tab)} - the full tab object shows: ${JSON.stringify(tab)}`);
-    setExtensionIconActiveColor(tab);
+  function makeCustomizationsToCurrentPage(relativeCssFilePath, relativeJsFilePath) {
+    console.log(`makeCustomizationsToCurrentPage`);
+    setExtensionIconActiveColor();
     if (relativeCssFilePath) {
-      chrome.tabs.insertCSS(getTabId(tab), {file: relativeCssFilePath, allFrames: true});
+      chrome.tabs.insertCSS({file: relativeCssFilePath, allFrames: true});
     }
     if (relativeJsFilePath) {
-      chrome.tabs.executeScript(getTabId(tab), {file: relativeJsFilePath, allFrames: true});
+      chrome.tabs.executeScript({file: relativeJsFilePath, allFrames: true});
     }
   }
 
