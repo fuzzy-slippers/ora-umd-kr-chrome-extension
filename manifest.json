@@ -14,9 +14,9 @@
     "default_icon": "ora_icon_off_dark_128.png"
   },
   "permissions":    [
-    "webNavigation",
     "activeTab",
-    "https://*.kuali.co/*"
+    "https://*.kuali.co/*",
+    "tabs"
 
   ],
   "icons": {
