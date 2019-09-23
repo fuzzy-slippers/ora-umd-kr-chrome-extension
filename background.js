@@ -142,6 +142,7 @@ function updatePageIfExtensionEnabled(extensionEnabled) {
  * change the extension icon to green to indicate its active on the current page
  */
  function setExtensionIconActiveColor() {
+                                                                      console.log(`setExtensionIconActiveColor() called, setting icon color to green`);
    chrome.browserAction.setIcon({path: "ora_icon_128.png"});
  }
 
@@ -157,6 +158,7 @@ function updatePageIfExtensionEnabled(extensionEnabled) {
    * change the extension icon to dark to indicate we are on a non-KR page or it's been disabled
    */
    function setExtensionIconDisabledColor() {
+                                                                      console.log(`setExtensionIconDisabledColor() called, setting icon color to dark gray`);     
      chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png"});
    }
 

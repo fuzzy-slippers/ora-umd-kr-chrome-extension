@@ -6,9 +6,9 @@
  * that called this script in the first place (with the flag to have it expose the HTML/DOM for all iframes in the page)
  */
 
- console.info(`detectActiveKRModuleTabContentScript running...`);
+                                                                      console.info(`detectActiveKRModuleTabContentScript running...`);
  if (document.forms["KualiForm"] && document.forms["KualiForm"].action) {
-   console.info(`sending document.forms["KualiForm"].action as message with theFormAction: ${document.forms["KualiForm"].action}`)
+                                                                      console.info(`sending document.forms["KualiForm"].action as message with theFormAction: ${document.forms["KualiForm"].action}`)
    chrome.runtime.sendMessage({theFormAction: `${document.forms["KualiForm"].action}`});
  }
 
