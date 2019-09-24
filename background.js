@@ -22,8 +22,8 @@ var extensionEnabled = true;
  */
 chrome.browserAction.onClicked.addListener(function(tab) {
                                                                       console.log(`click on icon detected via chrome.browserAction.onClicked.addListener`);
- extensionEnabled = !extensionEnabled;
- initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+ toggleExtensionOnOff();
+ initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(isExtensionCurrentlyTurnedOn(), ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 });
 
 /**
@@ -32,7 +32,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
  * tested using chrome.tabs.onUpdated.addListener instead so that we could avoid the webNavigation permission entirely but it wasn't handling redirect well in my testing, such as after a document is submitted (it was detecting just the form action URL from the interim page and not the final page) so webnavidation oncompleted which supposedly only fires when the page is totally done refreshing seems to be more reliable
  */
 chrome.webNavigation.onCompleted.addListener(function(tab) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(isExtensionCurrentlyTurnedOn(), ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 }, {});
 
 
@@ -41,7 +41,7 @@ chrome.webNavigation.onCompleted.addListener(function(tab) {
  * each time we switch tabs it calls the function that determines the appropriate icon color to show for this page and customize the page if its determined to be one of the KR modules/tabs in our list to customize
  */
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(isExtensionCurrentlyTurnedOn(), ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 });
 
 
@@ -72,9 +72,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   */
    function initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, urlPatterns) {
      //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
-     setIconInactiveOrDisabled(extensionEnabled);
+     setIconInactiveOrDisabled(isExtensionCurrentlyTurnedOn());
      //start the process to determine if the extension should be turned on (check that extension is enabled, that we are on a KR page and that the current KR module/tab being displayed is one in the list that should have the exention enabled)
-     updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns);
+     updateCurrentTabIfKRAndExtensionEnabled(isExtensionCurrentlyTurnedOn(), urlPatterns);
    }
 
 
@@ -95,7 +95,7 @@ function initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() {
  * based on whether the extension is currently enabled (using flag), either set to the inactive color if clicked on or the disabled color if clicked off (turning it green will happen at a later stage right along with the code to actually modify the page, if thats the case)
  */
 function setIconInactiveOrDisabled(extensionEnabled) {
-  if (extensionEnabled){
+  if (isExtensionCurrentlyTurnedOn()){
                                                                       console.log(`setIconInactiveOrDisabled called and extensionEnabled=true so setting icon color to yellow via call to setExtensionIconInactiveColor func`);
     setExtensionIconInactiveColor();
   }
@@ -118,7 +118,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
   }, function(tabs) {
    //if the url pattern doesnt match KR as specified in the url property above, this function will run but with an empty array, so don't do anything for these pages - this makes sure it returned something when querying for the current active tab
    if (tabs && tabs[0]) {
-     updatePageIfExtensionEnabled(extensionEnabled);
+     updatePageIfExtensionEnabled(isExtensionCurrentlyTurnedOn());
    }
   });
 }
@@ -129,7 +129,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
  * if extension determined to be clicked off by the user, dont need to do anything because the icon should already be set disabled or inactive initially before we get to this stage
  */
 function updatePageIfExtensionEnabled(extensionEnabled) {
-  if (extensionEnabled){
+  if (isExtensionCurrentlyTurnedOn()){
                                                                       console.log(`called updatePageIfExtensionEnabled and determined extensionEnabled=true`);
     initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn();
   }
@@ -158,7 +158,7 @@ function updatePageIfExtensionEnabled(extensionEnabled) {
    * change the extension icon to dark to indicate we are on a non-KR page or it's been disabled
    */
    function setExtensionIconDisabledColor() {
-                                                                      console.log(`setExtensionIconDisabledColor() called, setting icon color to dark gray`);     
+                                                                      console.log(`setExtensionIconDisabledColor() called, setting icon color to dark gray`);
      chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png"});
    }
 
@@ -206,4 +206,19 @@ function updatePageIfExtensionEnabled(extensionEnabled) {
     if (relativeJsFilePath) {
       chrome.tabs.executeScript({file: relativeJsFilePath, allFrames: true});
     }
+  }
+
+/**
+ * Check whether the extension is currently enabled or disabled (this is whether the user has clicked on the extension to turn it off or on)
+ * specifically, it returns true if the extension is currently turned on by the user or false if the extension is currently turned off by the user
+ */
+ function isExtensionCurrentlyTurnedOn() {
+   return extensionEnabled;
+ }
+
+ /**
+  * Toggle the extension off and on when the user clicks on the itcon - if it was on it will be turned off, if it is off it will be turned on (updating the parsisted state of the extension)
+  */
+  function toggleExtensionOnOff() {
+    extensionEnabled = !extensionEnabled;
   }
