@@ -8,11 +8,12 @@
 
 
 // making the choice to store state about the extension (like if it's enabled/disabled by the user) in a global object/variable in background.js - later we may decide to use the asyncronous storage API but for now the performance seems to work well enough and it avoids needing to make much of the code asynchronous as a result of incorporating the chrome storage API
-var extensionBackgroundStateObj;
-/**** toggle chrome extension on and off based on user clicking on extension icon with global background.js var ****/
-/**** reference: https://stackoverflow.com/questions/16136275/how-to-make-on-off-buttons-icons-for-a-chrome-extension ***/
-// start with the extension enabled
-var extensionEnabled = true;
+//we want to initially default the extension to on/enabled (extensionEnabled property) since the extension should be active when it is first installed or the chrome browser is restarted
+var extensionBackgroundStateObj = {
+  extensionEnabled: true
+};
+
+//var extensionEnabled = true;
 
 /*
 * ::Listeners::
@@ -96,7 +97,7 @@ function initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() {
  * based on whether the extension is currently enabled (using flag), either set to the inactive color if clicked on or the disabled color if clicked off (turning it green will happen at a later stage right along with the code to actually modify the page, if thats the case)
  */
 function setIconInactiveOrDisabled() {
-  if (isExtensionCurrentlyTurnedOn()){
+  if (getExtensionCurrentlyTurnedOn()){
                                                                       console.log(`setIconInactiveOrDisabled called and extensionEnabled=true so setting icon color to yellow via call to setExtensionIconInactiveColor func`);
     setExtensionIconInactiveColor();
   }
@@ -119,7 +120,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(urlPatterns) {
   }, function(tabs) {
    //if the url pattern doesnt match KR as specified in the url property above, this function will run but with an empty array, so don't do anything for these pages - this makes sure it returned something when querying for the current active tab
    if (tabs && tabs[0]) {
-     updatePageIfExtensionEnabled(isExtensionCurrentlyTurnedOn());
+     updatePageIfExtensionEnabled();
    }
   });
 }
@@ -130,7 +131,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(urlPatterns) {
  * if extension determined to be clicked off by the user, dont need to do anything because the icon should already be set disabled or inactive initially before we get to this stage
  */
 function updatePageIfExtensionEnabled() {
-  if (isExtensionCurrentlyTurnedOn()){
+  if (getExtensionCurrentlyTurnedOn()){
                                                                       console.log(`called updatePageIfExtensionEnabled and determined extensionEnabled=true`);
     initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn();
   }
@@ -209,17 +210,28 @@ function updatePageIfExtensionEnabled() {
     }
   }
 
+
 /**
- * Check whether the extension is currently enabled or disabled (this is whether the user has clicked on the extension to turn it off or on)
+ * getter for a flag to keep track of whether the extension is currently enabled or disabled by the user (clicking on the extension icon to toggle it on/off) - we are currently using a global state object (within background.js) to store extension state, but in the future we may decide to move over to the async storage API, although this introduces complexity and may not be warrented for background.js state
  * specifically, it returns true if the extension is currently turned on by the user or false if the extension is currently turned off by the user
  */
- function isExtensionCurrentlyTurnedOn() {
-   return extensionEnabled;
+ function getExtensionCurrentlyTurnedOn() {
+   return extensionBackgroundStateObj.extensionEnabled;
  }
 
  /**
+  * setter for a flag to keep track of whether the extension is currently enabled or disabled by the user (clicking on the extension icon to toggle it on/off) - - we are currently using a global state object (within background.js) to store extension state, but in the future we may decide to move over to the async storage API, although this introduces complexity and may not be warrented for background.js state
+  */
+  function setExtensionCurrentlyTurnedOn(isExtensionNowEnabled) {
+    extensionBackgroundStateObj.extensionEnabled = isExtensionNowEnabled;
+  }
+
+
+ /**
   * Toggle the extension off and on when the user clicks on the itcon - if it was on it will be turned off, if it is off it will be turned on (updating the parsisted state of the extension)
+  * reference for strategy of keeping state in flag that is flipped on/off: https://stackoverflow.com/questions/16136275/how-to-make-on-off-buttons-icons-for-a-chrome-extension
   */
   function toggleExtensionOnOff() {
-    extensionEnabled = !extensionEnabled;
+    //set it to the NOT/opposite of whet the getter currently returns as the current state - when someone clicks the extension icon
+    setExtensionCurrentlyTurnedOn(!getExtensionCurrentlyTurnedOn());
   }
