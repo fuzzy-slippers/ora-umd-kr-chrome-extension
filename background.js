@@ -7,7 +7,8 @@
 */
 
 
-
+// making the choice to store state about the extension (like if it's enabled/disabled by the user) in a global object/variable in background.js - later we may decide to use the asyncronous storage API but for now the performance seems to work well enough and it avoids needing to make much of the code asynchronous as a result of incorporating the chrome storage API
+var extensionBackgroundStateObj;
 /**** toggle chrome extension on and off based on user clicking on extension icon with global background.js var ****/
 /**** reference: https://stackoverflow.com/questions/16136275/how-to-make-on-off-buttons-icons-for-a-chrome-extension ***/
 // start with the extension enabled
@@ -23,7 +24,7 @@ var extensionEnabled = true;
 chrome.browserAction.onClicked.addListener(function(tab) {
                                                                       console.log(`click on icon detected via chrome.browserAction.onClicked.addListener`);
  toggleExtensionOnOff();
- initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(isExtensionCurrentlyTurnedOn(), ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+ initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 });
 
 /**
@@ -32,7 +33,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
  * tested using chrome.tabs.onUpdated.addListener instead so that we could avoid the webNavigation permission entirely but it wasn't handling redirect well in my testing, such as after a document is submitted (it was detecting just the form action URL from the interim page and not the final page) so webnavidation oncompleted which supposedly only fires when the page is totally done refreshing seems to be more reliable
  */
 chrome.webNavigation.onCompleted.addListener(function(tab) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(isExtensionCurrentlyTurnedOn(), ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 }, {});
 
 
@@ -41,7 +42,7 @@ chrome.webNavigation.onCompleted.addListener(function(tab) {
  * each time we switch tabs it calls the function that determines the appropriate icon color to show for this page and customize the page if its determined to be one of the KR modules/tabs in our list to customize
  */
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(isExtensionCurrentlyTurnedOn(), ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 });
 
 
@@ -70,11 +71,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
  /**
   * A high level function that 1) defaults the icon to disabled/inactive initial as a base color/state then 2) checks if the extension should be
   */
-   function initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, urlPatterns) {
+   function initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(urlPatterns) {
      //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
-     setIconInactiveOrDisabled(isExtensionCurrentlyTurnedOn());
+     setIconInactiveOrDisabled();
      //start the process to determine if the extension should be turned on (check that extension is enabled, that we are on a KR page and that the current KR module/tab being displayed is one in the list that should have the exention enabled)
-     updateCurrentTabIfKRAndExtensionEnabled(isExtensionCurrentlyTurnedOn(), urlPatterns);
+     updateCurrentTabIfKRAndExtensionEnabled(urlPatterns);
    }
 
 
@@ -94,7 +95,7 @@ function initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() {
 /**
  * based on whether the extension is currently enabled (using flag), either set to the inactive color if clicked on or the disabled color if clicked off (turning it green will happen at a later stage right along with the code to actually modify the page, if thats the case)
  */
-function setIconInactiveOrDisabled(extensionEnabled) {
+function setIconInactiveOrDisabled() {
   if (isExtensionCurrentlyTurnedOn()){
                                                                       console.log(`setIconInactiveOrDisabled called and extensionEnabled=true so setting icon color to yellow via call to setExtensionIconInactiveColor func`);
     setExtensionIconInactiveColor();
@@ -108,7 +109,7 @@ function setIconInactiveOrDisabled(extensionEnabled) {
 /**
  * confirm if the current tab/page loaded is a KR page (based on the urlPatterns passed in that match Kuali Research URL patterns - note it doesn't look at which KR module/tab is loaded, ONLY that the URL matches a potential KR page), if it does, run the next step to confirm the extension is also currently enabled
  */
-function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) {
+function updateCurrentTabIfKRAndExtensionEnabled(urlPatterns) {
   chrome.tabs.query({
   "active":        true,
   "currentWindow": true,
@@ -128,7 +129,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(extensionEnabled, urlPatterns) 
  * if so kick off the code to try to determine if this is a KR page matching a tab/module we should enable the extension/icon/customizations on
  * if extension determined to be clicked off by the user, dont need to do anything because the icon should already be set disabled or inactive initially before we get to this stage
  */
-function updatePageIfExtensionEnabled(extensionEnabled) {
+function updatePageIfExtensionEnabled() {
   if (isExtensionCurrentlyTurnedOn()){
                                                                       console.log(`called updatePageIfExtensionEnabled and determined extensionEnabled=true`);
     initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn();
