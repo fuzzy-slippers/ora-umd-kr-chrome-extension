@@ -6,7 +6,7 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "modulesTabsInKRToActivateExtension.js",
+      "configSettings.js",
       "background.js"
     ]
   },
