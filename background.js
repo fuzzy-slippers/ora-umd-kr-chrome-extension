@@ -8,9 +8,11 @@
 
 
 // making the choice to store state about the extension (like if it's enabled/disabled by the user) in a global object/variable in background.js - later we may decide to use the asyncronous storage API but for now the performance seems to work well enough and it avoids needing to make much of the code asynchronous as a result of incorporating the chrome storage API
-//we want to initially default the extension to on/enabled (extensionEnabled property) since the extension should be active when it is first installed or the chrome browser is restarted
+//initially default the extension to on/enabled (extensionEnabled property) since the extension should be active when it is first installed or the chrome browser is restarted
+//also initially default the cache of the last icon image name/state to an empty name because when the extension first starts up there is no cached last icon - nothing would be cached initially
 var extensionBackgroundStateObj = {
-  extensionEnabled: true
+  extensionEnabled: true,
+  cacheLastIconImgName: ""
 };
 
 //var extensionEnabled = true;
@@ -137,78 +139,99 @@ function updatePageIfExtensionEnabled() {
   }
 }
 
-
-
-
 /*
  * change the extension icon to green to indicate its active on the current page
+ * uses caching to avoid updating the image if it's showing the right icon already
  */
- function setExtensionIconActiveColor() {
-                                                                      console.log(`setExtensionIconActiveColor() called, setting icon color to green`);
-   chrome.browserAction.setIcon({path: "ora_icon_128.png"});
- }
-
- /*
-  * change the extension icon to yellow to indicate we are on a KR page, but it's not doing anything to the current page
-  */
-  function setExtensionIconInactiveColor() {
-                                                                      console.log(`about to set icon to yellow (inside setExtensionIconInactiveColor)`);
-    chrome.browserAction.setIcon({path: "ora_icon_off_yellow_128.png"});
+function setExtensionIconActiveColor() {
+  console.log(`setExtensionIconActiveColor() called...`);
+  const activeImgName = "ora_icon_128.png";
+  //only update the icon image if it isn't already showing the active image currently (no reason to use the resources to update the icon image if there will be no change)
+  if (getCachedLastIconImgName() !== activeImgName) {
+    console.log(`setExtensionIconActiveColor() called, about to set icon to green - activeImgName: ${activeImgName}`);
+    chrome.browserAction.setIcon({path: activeImgName});
+    //update the cache to reflect the icon image name that was just set/updated
+    setCachedLastIconImgName(activeImgName);
   }
+}
 
-  /*
-   * change the extension icon to dark to indicate we are on a non-KR page or it's been disabled
-   */
-   function setExtensionIconDisabledColor() {
-                                                                      console.log(`setExtensionIconDisabledColor() called, setting icon color to dark gray`);
-     chrome.browserAction.setIcon({path: "ora_icon_off_dark_128.png"});
-   }
+/*
+ * change the extension icon to yellow to indicate we are on a KR page, but it's not doing anything to the current page
+ * uses caching to avoid updating the image if it's showing the right icon already
+ */
+function setExtensionIconInactiveColor() {
+  console.log(`setExtensionIconInctiveColor() called...`);
+  const inactiveImgName = "ora_icon_off_yellow_128.png";
+  //only update the icon image if it isn't already showing the inactive image currently (no reason to use the resources to update the icon image if there will be no change)
+  if (getCachedLastIconImgName() !== inactiveImgName) {
+    console.log(`about to set icon to yellow (inside setExtensionIconInactiveColor) - inactiveImgName: ${inactiveImgName}`);
+    chrome.browserAction.setIcon({path: inactiveImgName});
+    //update the cache to reflect the icon image name that was just set/updated
+    setCachedLastIconImgName(inactiveImgName);
+  }
+}
+
+/*
+ * change the extension icon to dark to indicate we are on a non-KR page or it's been disabled
+ * uses caching to avoid updating the image if it's showing the right icon already
+ */
+function setExtensionIconDisabledColor() {
+  console.log(`setExtensionIconDisabledColor() called...`);
+  const disabledImgName = "ora_icon_off_dark_128.png";
+  //only update the icon image if it isn't already showing the disabled image currently (no reason to use the resources to update the icon image if there will be no change)
+  if (getCachedLastIconImgName() !== disabledImgName) {
+    console.log(`setExtensionIconDisabledColor() called, about to set icon to dark gray - disabledImgName: ${disabledImgName}`);
+    chrome.browserAction.setIcon({path: disabledImgName});
+    //update the cache to reflect the icon image name that was just set/updated
+    setCachedLastIconImgName(disabledImgName);
+  }
+}
 
 
 
-  /**
-  * check via a regex what the current page name is (i.e. "awardHome.do") and check if it is one that is in the list of KR pages we plan to modify
-  * (we are using data from the external file (kind of like json config file) modulesTabsInKRToActivateExtension.js to load in which KR tabs/modules should be customized and the css/js files to use)
-  *
-  */
-  function checkIfCurrentPageInListOfKRModulesTabs(actionStr) {
-    // use the modulesTabsInKRToActivateExtension.js data/listing (imported in manifest.json) of KR Modules and Tabs that we want to "turn on" this extension automatically when we go to that page - decided it would be cleaner to keep this in a separate file so we could easily add KR modules/tabs in the future without having to change anything else in the code
-    // first make sure the modulesTabsInKRToActivateExtension object from modulesTabsInKRToActivateExtension.js was successfully loaded
-    if (modulesTabsInKRToActivateExtension) {
-        //use a js regular expression to pull out just the .do page name from the KualiForms action URL, for example awardHome.do or awardContacts.do
-        const pullOutPageNameWithDoFromActionUrlRegex = new RegExp('\/([a-zA-Z]{2,100}.do)', 'ig');
-        //no advantages in looking for multiple matches, there should be only one [htmlpage].do in the action URL so using exec
-        const regexFirstResultArr = pullOutPageNameWithDoFromActionUrlRegex.exec(actionStr);
-        //since we don't want the match to include the slash before it, just for example "awardHome.do", we are using the array position 1 always, which corresponds to just the part in the regex in the parenthese, which should be the page name .do without the preceeding slash
-        if (regexFirstResultArr !== null  && regexFirstResultArr[1]) {
-          const doFileName = regexFirstResultArr[1];
-                     console.log(`regexFirstResultArr[1] found something, it is: ${JSON.stringify(regexFirstResultArr[1])}`);
-          //because the properties on the modulesTabsInKRToActivateExtension object are "awardHome.do", "awardContacts.do", etc we can just check if the current page name matches any of the properties defined since these would be the pages we want to load css, js for, otherwise it must not be one of them to do something for
-          if (modulesTabsInKRToActivateExtension[doFileName]) {
-                     console.log(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
-                     console.log(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
-            makeCustomizationsToCurrentPage(modulesTabsInKRToActivateExtension[doFileName].cssFile, modulesTabsInKRToActivateExtension[doFileName].jsFile);
-          }
+/**
+* check via a regex what the current page name is (i.e. "awardHome.do") and check if it is one that is in the list of KR pages we plan to modify
+* (we are using data from the external file (kind of like json config file) modulesTabsInKRToActivateExtension.js to load in which KR tabs/modules should be customized and the css/js files to use)
+*
+*/
+function checkIfCurrentPageInListOfKRModulesTabs(actionStr) {
+  // use the modulesTabsInKRToActivateExtension.js data/listing (imported in manifest.json) of KR Modules and Tabs that we want to "turn on" this extension automatically when we go to that page - decided it would be cleaner to keep this in a separate file so we could easily add KR modules/tabs in the future without having to change anything else in the code
+  // first make sure the modulesTabsInKRToActivateExtension object from modulesTabsInKRToActivateExtension.js was successfully loaded
+  if (modulesTabsInKRToActivateExtension) {
+      //use a js regular expression to pull out just the .do page name from the KualiForms action URL, for example awardHome.do or awardContacts.do
+      const pullOutPageNameWithDoFromActionUrlRegex = new RegExp('\/([a-zA-Z]{2,100}.do)', 'ig');
+      //no advantages in looking for multiple matches, there should be only one [htmlpage].do in the action URL so using exec
+      const regexFirstResultArr = pullOutPageNameWithDoFromActionUrlRegex.exec(actionStr);
+      //since we don't want the match to include the slash before it, just for example "awardHome.do", we are using the array position 1 always, which corresponds to just the part in the regex in the parenthese, which should be the page name .do without the preceeding slash
+      if (regexFirstResultArr !== null  && regexFirstResultArr[1]) {
+        const doFileName = regexFirstResultArr[1];
+                   console.log(`regexFirstResultArr[1] found something, it is: ${JSON.stringify(regexFirstResultArr[1])}`);
+        //because the properties on the modulesTabsInKRToActivateExtension object are "awardHome.do", "awardContacts.do", etc we can just check if the current page name matches any of the properties defined since these would be the pages we want to load css, js for, otherwise it must not be one of them to do something for
+        if (modulesTabsInKRToActivateExtension[doFileName]) {
+                   console.log(`modulesTabsInKRToActivateExtension[doFileName].cssFile: ${modulesTabsInKRToActivateExtension[doFileName].cssFile}`);
+                   console.log(`modulesTabsInKRToActivateExtension[doFileName].jsFile: ${modulesTabsInKRToActivateExtension[doFileName].jsFile}`);
+          makeCustomizationsToCurrentPage(modulesTabsInKRToActivateExtension[doFileName].cssFile, modulesTabsInKRToActivateExtension[doFileName].jsFile);
         }
-    }
+      }
   }
+}
 
 
-  /**
-  * makes the customizations specific to the currently loaded tab (using the passed in css and js files/paths to use) as well as change the icon to indicate the extension is actively making changes
-  * overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
-  * we want to change the icon to show active right before we actually load the css and js so that we can be sure that we aren't showing someone that the extension is active when nothing is being done or showing them its not active when something is actually being customized on the current page - for this reason, this function is the only place in the extension code that will both 1) make customizations to the current page or 2) make the icon show the active color (initially decided on green)
-  */
-  function makeCustomizationsToCurrentPage(relativeCssFilePath, relativeJsFilePath) {
-    console.log(`makeCustomizationsToCurrentPage`);
-    setExtensionIconActiveColor();
-    if (relativeCssFilePath) {
-      chrome.tabs.insertCSS({file: relativeCssFilePath, allFrames: true});
-    }
-    if (relativeJsFilePath) {
-      chrome.tabs.executeScript({file: relativeJsFilePath, allFrames: true});
-    }
+/**
+* makes the customizations specific to the currently loaded tab (using the passed in css and js files/paths to use) as well as change the icon to indicate the extension is actively making changes
+* overlay the css and run the custom javascript to modify the current page (if the form elements to change, etc are present)
+* we want to change the icon to show active right before we actually load the css and js so that we can be sure that we aren't showing someone that the extension is active when nothing is being done or showing them its not active when something is actually being customized on the current page - for this reason, this function is the only place in the extension code that will both 1) make customizations to the current page or 2) make the icon show the active color (initially decided on green)
+*/
+function makeCustomizationsToCurrentPage(relativeCssFilePath, relativeJsFilePath) {
+  console.log(`makeCustomizationsToCurrentPage`);
+  setExtensionIconActiveColor();
+  if (relativeCssFilePath) {
+    chrome.tabs.insertCSS({file: relativeCssFilePath, allFrames: true});
   }
+  if (relativeJsFilePath) {
+    chrome.tabs.executeScript({file: relativeJsFilePath, allFrames: true});
+  }
+}
 
 
 /**
@@ -219,12 +242,26 @@ function updatePageIfExtensionEnabled() {
    return extensionBackgroundStateObj.extensionEnabled;
  }
 
- /**
-  * setter for a flag to keep track of whether the extension is currently enabled or disabled by the user (clicking on the extension icon to toggle it on/off) - - we are currently using a global state object (within background.js) to store extension state, but in the future we may decide to move over to the async storage API, although this introduces complexity and may not be warrented for background.js state
-  */
-  function setExtensionCurrentlyTurnedOn(isExtensionNowEnabled) {
-    extensionBackgroundStateObj.extensionEnabled = isExtensionNowEnabled;
-  }
+/**
+* setter for a flag to keep track of whether the extension is currently enabled or disabled by the user (clicking on the extension icon to toggle it on/off) - - we are currently using a global state object (within background.js) to store extension state, but in the future we may decide to move over to the async storage API, although this introduces complexity and may not be warrented for background.js state
+*/
+function setExtensionCurrentlyTurnedOn(isExtensionNowEnabled) {
+  extensionBackgroundStateObj.extensionEnabled = isExtensionNowEnabled;
+}
+
+/**
+* getter for a flag to cache the icon (image name) that is currently set - this is useful because we don't want to go through the presumably slow operation of updating the icon image to the same image that it is already showing, since chrome does not appear to have a way to check the current icon image before updating it, we are doing our own caching
+*/
+function getCachedLastIconImgName() {
+ return extensionBackgroundStateObj.cacheLastIconImgName;
+}
+
+/**
+* setter to update the cache with the image name for the icon that is currently being set - this is useful because we don't want to go through the presumably slow operation of updating the icon image to the same image that it is already showing, since chrome does not appear to have a way to check the current icon image before updating it, we are doing our own caching
+*/
+function setCachedLastIconImgName(newIconImgName) {
+  extensionBackgroundStateObj.cacheLastIconImgName = newIconImgName;
+}
 
 
  /**
