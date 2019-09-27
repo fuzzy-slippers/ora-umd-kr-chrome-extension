@@ -28,6 +28,10 @@ const configSettings = {
     "activeImgName": "ora_icon_128.png",
     "inactiveImgName": "ora_icon_off_yellow_128.png",
     "disabledImgName": "ora_icon_off_dark_128.png"
+  },
+
+  "userMessages": {
+    "extensionDisabledPopUpMsg": `The ORA KR extension has now been disabled.\n PLEASE NOTE: Changes to the current page may not be reflected until you navigate to a new tab or page in Kuali Research.`
   }
 
 }

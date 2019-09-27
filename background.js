@@ -174,6 +174,7 @@ function setExtensionIconInactiveColor() {
 /*
  * change the extension icon to dark to indicate we are on a non-KR page or it's been disabled
  * uses caching to avoid updating the image if it's showing the right icon already
+ * also pops up a message to the user when the plugin is initially disabled to remind them not to refresh the browser but go to a new tab if they want the extension changes to be fully disabled
  */
 function setExtensionIconDisabledColor() {
   console.log(`setExtensionIconDisabledColor() called...`);
@@ -183,6 +184,8 @@ function setExtensionIconDisabledColor() {
     chrome.browserAction.setIcon({path: configSettings.allIconImages.disabledImgName});
     //update the cache to reflect the icon image name that was just set/updated
     setCachedLastIconImgName(configSettings.allIconImages.disabledImgName);
+    //pop up a message when the user first clicks to disable the extension to let them know they wont see all changes until they switch KR tabs (which in terms of this function logic cooincides with when the icon cache needs to be updated to the disabled icon img - if it already shows disabled, do not pop up msg)
+    popMessageAboutChangingTabsForExtensionChangesToBeRemoved();
   }
 }
 
@@ -268,3 +271,10 @@ function setCachedLastIconImgName(newIconImgName) {
     //set it to the NOT/opposite of whet the getter currently returns as the current state - when someone clicks the extension icon
     setExtensionCurrentlyTurnedOn(!getExtensionCurrentlyTurnedOn());
   }
+
+  /**
+   * Pops up a message to the user to let them know the extension changes wont be fully disabled until the go to a new tab (and remind them not to refresh)
+   */
+   function popMessageAboutChangingTabsForExtensionChangesToBeRemoved() {
+     alert(configSettings.userMessages.extensionDisabledPopUpMsg);
+   }
