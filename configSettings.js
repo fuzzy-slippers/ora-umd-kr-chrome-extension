@@ -31,7 +31,7 @@ const configSettings = {
   },
 
   "userMessages": {
-    "extensionDisabledPopUpMsg": `The ORA KR extension has now been disabled.\n PLEASE NOTE: Changes to the current page may not be reflected until you navigate to a new tab or page in Kuali Research.`
+    "extensionDisabledPopUpMsg": `The ORA KR extension has now been disabled.\nPLEASE NOTE: Changes to the current page may not be reflected until you navigate to a new tab or page in Kuali Research.`
   }
 
 }
