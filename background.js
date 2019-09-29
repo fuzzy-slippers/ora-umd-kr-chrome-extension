@@ -41,6 +41,25 @@ chrome.webNavigation.onCompleted.addListener(function(tab) {
   initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
 }, {});
 
+// switch tabs - may posssibly use ['*://*/*foo.bar', '*://*/*foo.bar?*'] see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns
+chrome.tabs.onActivated.addListener(function(activeInfo) {
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+});
+
+
+// listen for messages from content scripts
+// the message
+// currently we are listening for a specific "theFormAction" property on the request that should be coming from the detectActiveKRModuleTabContentScript.js script
+// it should be simpy sending along the KualiForm <form> action property/url on the currently loaded page, so we can figure out which KR module/tab such as the Award Module Special Review tab is currently loaded in the active tab in the browser
+// we will need this info to decide whether to have the extension update the current KR page or now (if its one of the KR pages we have decided to change/update)
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  console.log(`chrome.runtime.onMessage.addListener returned some message`);
+  //check the type of message received based on the response property - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding
+  if (request.theFormAction) {
+    const formActionFromMsg = request.theFormAction;
+    checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+  }
+});
 
 /**
  * add a listener for whenever the user switches tabs (clicking between already open tabs in the browser is not the same listener as loading a page and requires it's own listener)
