@@ -29,7 +29,7 @@ var extensionBackgroundStateObj = {
 chrome.browserAction.onClicked.addListener(function(tab) {
                                                                       console.log(`click on icon detected via chrome.browserAction.onClicked.addListener`);
  toggleExtensionOnOff();
- initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+ initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
 });
 
 /**
@@ -38,12 +38,14 @@ chrome.browserAction.onClicked.addListener(function(tab) {
  * tested using chrome.tabs.onUpdated.addListener instead so that we could avoid the webNavigation permission entirely but it wasn't handling redirect well in my testing, such as after a document is submitted (it was detecting just the form action URL from the interim page and not the final page) so webnavidation oncompleted which supposedly only fires when the page is totally done refreshing seems to be more reliable
  */
 chrome.webNavigation.onCompleted.addListener(function(tab) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
 }, {});
 
-// switch tabs - may posssibly use ['*://*/*foo.bar', '*://*/*foo.bar?*'] see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns
-chrome.tabs.onActivated.addListener(function(activeInfo) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(extensionEnabled, ["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+/**
+ * add a listener for switching between tabs - we basically run the same function/code that we do when the page is refreshed - however this will likely just have the effect of determining the correct icon/color to load as a refresh is typically needed for css changes to take effect - maybe JS changes would in the right circumstances, since we do caching for icons that are not changing, hopefully the performance shouldn't be too bad
+ */
+ chrome.tabs.onActivated.addListener(function(activeInfo) {
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
 });
 
 
@@ -66,7 +68,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
  * each time we switch tabs it calls the function that determines the appropriate icon color to show for this page and customize the page if its determined to be one of the KR modules/tabs in our list to customize
  */
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"])
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
 });
 
 
