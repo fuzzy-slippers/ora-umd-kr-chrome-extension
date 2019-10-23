@@ -1,7 +1,17 @@
 {
   "name":           "(ORA@UMD) KR Extension for Power Users",
-  "version":        "1.00",
+  "version":        "1.02",
   "description":    "A Chrome browser extension created by the Office of Research Administration at the University of Maryland.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.kuali.co/res/*",
+        "https://*.kuali.co/dashboard/*"
+      ],
+      "all_frames": true,
+      "js": ["detectActiveKRModuleTabContentScript.js"]
+    }
+  ],
   "background": {
     "persistent": false,
     "scripts": [
@@ -13,13 +23,9 @@
     "default_icon": "ora_icon_off_dark_128.png"
   },
   "permissions":    [
-    "activeTab",
-    "tabs",
     "https://*.kuali.co/res/*",
     "https://*.kuali.co/dashboard/*",
-    "webNavigation",
-    "https://*.kuali.co/res/*",
-    "https://*.kuali.co/dashboard/*"
+    "activeTab"
   ],
   "icons": {
     "128": "ora_icon_128.png"

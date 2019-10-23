@@ -29,94 +29,182 @@ var extensionBackgroundStateObj = {
 chrome.browserAction.onClicked.addListener(function(tab) {
                                                                       console.log(`click on icon detected via chrome.browserAction.onClicked.addListener`);
  toggleExtensionOnOff();
- initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
+ //setIconInactiveOrDisabled();
+ //altVersionInitiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecifiedKRModuleTab();
+ initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab();
 });
 
-/**
- * add a listener for each reload of the page (as the extension will need to run on each reload)
- * each time we load/reload any URLs it calls the function that determines the appropriate icon color to show for this page and customize the page if its determined to be one of the KR modules/tabs in our list to customize
- * tested using chrome.tabs.onUpdated.addListener instead so that we could avoid the webNavigation permission entirely but it wasn't handling redirect well in my testing, such as after a document is submitted (it was detecting just the form action URL from the interim page and not the final page) so webnavidation oncompleted which supposedly only fires when the page is totally done refreshing seems to be more reliable
- */
-chrome.webNavigation.onCompleted.addListener(function(tab) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
-}, {});
+
+
 
 /**
  * add a listener for switching between tabs - we basically run the same function/code that we do when the page is refreshed - however this will likely just have the effect of determining the correct icon/color to load as a refresh is typically needed for css changes to take effect - maybe JS changes would in the right circumstances, since we do caching for icons that are not changing, hopefully the performance shouldn't be too bad
  */
  chrome.tabs.onActivated.addListener(function(activeInfo) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
+   console.log(`inside chrome.tabs.onActivated.addListener (called when switching tabs)`);
+   //altVersionInitiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecifiedKRModuleTab();
+   initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab();
+
+
 });
 
 
+/* may not need if things are kicked off by the detectActiveKRModuleTabContentScript.js scripts
+*/
+/**
+ * add a listener for each reload of the page (as the extension will need to run on each reload)
+ * each time we load/reload any URLs it calls the function that determines the appropriate icon color to show for this page and customize the page if its determined to be one of the KR modules/tabs in our list to customize
+ * tested using chrome.tabs.onUpdated.addListener instead so that we could avoid the webNavigation permission entirely but it wasn't handling redirect well in my testing, such as after a document is submitted (it was detecting just the form action URL from the interim page and not the final page) so webnavidation oncompleted which supposedly only fires when the page is totally done refreshing seems to be more reliable
+ */
+// chrome.webNavigation.onCompleted.addListener(function(tab) {
+//   // initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
+//     setIconInactiveOrDisabled();
+//
+// }, {});
+
+// // new URL loaded in either new or existing tab - because this often fires after the onload in detectActiveKRModuleTabContentScript we need both (will try to prevent both happening in that scenario on the detectActiveKRModuleTabContentScript side)
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+
+  console.log(`chrome.tabs.onUpdated.addListener (new url loaded new or existing tab reloaded) - tab info: ${JSON.stringify(tab)}`);
+  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab();
+
+ });
+
+
+
+/////// may be able to remove this listener if we do 2-way communication with detectActiveKRModuleTabContentScript.js when we first send the message*/
 // listen for messages from content scripts
 // the message
 // currently we are listening for a specific "theFormAction" property on the request that should be coming from the detectActiveKRModuleTabContentScript.js script
 // it should be simpy sending along the KualiForm <form> action property/url on the currently loaded page, so we can figure out which KR module/tab such as the Award Module Special Review tab is currently loaded in the active tab in the browser
 // we will need this info to decide whether to have the extension update the current KR page or now (if its one of the KR pages we have decided to change/update)
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.log(`chrome.runtime.onMessage.addListener returned some message`);
-  //check the type of message received based on the response property - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding
-  if (request.theFormAction) {
-    const formActionFromMsg = request.theFormAction;
-    checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
-  }
-});
+
+// chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+//   console.log(`chrome.runtime.onMessage.addListener returned some message`);
+//   //check the type of message received based on the response property - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding
+//   if (request.theFormAction) {
+//     const formActionFromMsg = request.theFormAction;
+//     checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+//   }
+// });
+
+
+
+// /**
+//  * add a listener for whenever the user switches tabs (clicking between already open tabs in the browser is not the same listener as loading a page and requires it's own listener)
+//  * each time we switch tabs it calls the function that determines the appropriate icon color to show for this page and customize the page if its determined to be one of the KR modules/tabs in our list to customize
+//  */
+// chrome.tabs.onActivated.addListener(function(activeInfo) {
+//   initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
+// });
+
 
 /**
- * add a listener for whenever the user switches tabs (clicking between already open tabs in the browser is not the same listener as loading a page and requires it's own listener)
- * each time we switch tabs it calls the function that determines the appropriate icon color to show for this page and customize the page if its determined to be one of the KR modules/tabs in our list to customize
- */
-chrome.tabs.onActivated.addListener(function(activeInfo) {
-  initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(["https://*.kuali.co/res/*","https://*.kuali.co/dashboard/*"]);
-});
-
-
-/**
- * add a listener to listen for messages from content scripts that are part of this extension
- * currently we are listening for a specific "theFormAction" property on the request that should be coming from the detectActiveKRModuleTabContentScript.js script
- * it should be simpy sending along the KualiForm <form> action property/url on the currently loaded page, so we can figure out which KR module/tab such as the Award Module Special Review tab is currently loaded in the active tab in the browser
- * we will need this info to decide whether to have the extension update the current KR page or now (if its one of the KR pages we have decided to change/update)
- * this is the last step [part 2)] in the process of determining which KR page we are currently on
+ * listener to handle situation where we are getting multiple responses back from different iframes on the KR page that have each loaded the detectActiveKRModuleTabContentScript listener and are each sending back messages with form action URL info (2 way chrome message passing used in initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() doesnt handle when there are multiple responses coming back)
+ * in addition to the initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() function below which sends a 2-way request to ask for the form action URL of the currently loaded KR page and gets a response back from the contentScript, because KR pages can have multiple iframes, for example one KR "page" can have 3 KualiForms loading each with a different URL and only one is the frame that relates to the actual page and because Chromes 2 way message/response system only picks up the first
+ * response and discards the other 2+, we need this listener to be actively listening for messages from the content script with "theFormAction" properties so that if we get other messages that the 2 way communication would have discarded, for example saw this with the TimeAndMoney.do URL where the Routing.do was coming back as the first response but then one of the others is TimeAndMoney.do that we are actually looking for
+ * this listener will check all three and check if ANY of the three are URLs that should flag the current page as active (it would have already been set inactive earlier before this step runs, so then if any of the three flag it active, it should stay active for this page load)
  */
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-                                                                        console.log(`chrome.runtime.onMessage.addListener returned some message`);
-  //look for messages that contain a "theFormAction" property, which indicate the message is coming from detectActiveKRModuleTabContentScript.js specifically - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding to try to parse the URL
-  if (request.theFormAction) {
-    const formActionFromMsg = request.theFormAction;
-    checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+                                                      console.log(`background.js chrome.runtime.onMessage.addListener received a message`);
+                                                      console.log(`background.js chrome.runtime.onMessage.addListener received request: ${JSON.stringify(request)} sender: ${JSON.stringify(sender)} sendResponse: ${JSON.stringify(sendResponse)}`);
+
+  //filter out messages from KR tabs/iframes that are "loading", chrome will send messages when tabs/iframes are still loading, we don't care about these interim messages
+  if (sender.tab.status === "complete") {
+
+    //look for messages that contain a "theFormAction" property, which indicate the message is coming from detectActiveKRModuleTabContentScript.js specifically - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding to try to parse the URL
+    if (request.theFormAction) {
+                        console.log(`one of possibly multiple responses from detectActiveKRModuleTabContentScript.js detected by the chrome.runtime.onMessage.addListener (will run checkIfCurrentPageInListOfKRModulesTabs on it): ${JSON.stringify(request)}`);
+      const formActionFromMsg = request.theFormAction;
+      //instead of calling initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab() which will be changing the icon color back to yellow/gray with each iframe in the KR page (sometimes the last one to send a message is a routing iframe that would trigger the extension to show as off), call checkIfCurrentPageInListOfKRModulesTabs as that skips the step of determining if the icon needs to be turned inactive/disabled and goes right to determining if it needs to be enabled (if one of   //the four iframes in a page has a URL that indicates we are on a KR module/tab that should enable the extension and show the active icon even if other iframes on the current KR page have other random names like "RouteLog.do")
+      checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+    }
   }
+  else {
+    console.log(`status showing as not complete for request: ${JSON.stringify(request)} sender: ${JSON.stringify(sender)} sendResponse: ${JSON.stringify(sendResponse)}`);
+  }
+
+
+  /**
+   * to try to get around chrome.tabs.onUpdated.addListener above not working for KR page redirects,
+   * having the detectActiveKRModuleTabContentScript.js have a listener for window.onload events
+   * and have that pass a message to let the background.js know when the page has been updated WHEN
+   * A REDIRECT HAPPENED! (otherwise we cant do it without the webnavigation API which requires
+   * priviledges to track URLs which we don't want to do)
+   */
+  if (request.onloadTheFormAction) {
+                      console.log(`message from detectActiveKRModuleTabContentScript.js detected by window.onload (will run checkIfCurrentPageInListOfKRModulesTabs on it): ${JSON.stringify(request)}`);
+    const onloadFormActionFromMsg = request.onloadTheFormAction;
+    //instead of calling initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab() which will be changing the icon color back to yellow/gray with each iframe in the KR page (sometimes the last one to send a message is a routing iframe that would trigger the extension to show as off), call checkIfCurrentPageInListOfKRModulesTabs as that skips the step of determining if the icon needs to be turned inactive/disabled and goes right to determining if it needs to be enabled (if one of   //the four iframes in a page has a URL that indicates we are on a KR module/tab that should enable the extension and show the active icon even if other iframes on the current KR page have other random names like "RouteLog.do")
+    checkIfCurrentPageInListOfKRModulesTabs(onloadFormActionFromMsg);
+  }
+
 });
-
-
 
 /*
  * ::Functions::
  */
 
  /**
-  * A high level function that 1) defaults the icon to disabled/inactive initial as a base color/state then 2) checks if the extension should be
+  * A high level function that 1) defaults the icon to disabled/inactive initial as a base color/state then 2) checks if the extension should be enabled
   */
-   function initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab(urlPatterns) {
+   function initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab() {
      //default the icon to disabled or inactive depending on whether the extension is currenly on or off (later if the page one of the ones to be modified, the icon will be changed to enabled)
      setIconInactiveOrDisabled();
      //start the process to determine if the extension should be turned on (check that extension is enabled, that we are on a KR page and that the current KR module/tab being displayed is one in the list that should have the exention enabled)
-     updateCurrentTabIfKRAndExtensionEnabled(urlPatterns);
+     //updatePageIfExtensionEnabled();
+     updateCurrentTabIfKRAndExtensionEnabled();
    }
+
+  //!!!given issues with clicking extension off still updating css etc regardless here is what I think would be needed:
+  // 1. may not need the updateCurrentTabIfKRAndExtensionEnabled step since im not sure we need to check the url pattern since the manifest is doing it and we arent getting URL data with the permissions we have set right now anyway
+  // 2. but we do need to use updatePageIfExtensionEnabled(); function and then
+  // 3. change initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() to do the below message sending the new way...versus just loading the detectActiveKRModuleTabContentScript.js script...this also means we can get rid of the code that just send the form action back when that js file loaded and instead ONLY have a listener in the detectActiveKRModuleTabContentScript.js file to send the form action URL only when it recieves a message
+  // function altVersionInitiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecifiedKRModuleTab() {
+  //   setIconInactiveOrDisabled();
+  //   initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn();
+  // }
 
 
 /**
-* helps determine which module/tab in KR the user is currently viewing in the active browser tab in Google chrome
-* due to some limitations of background.js only being able to figure out the URL but not the content/DOM/form elements of the active tab in the browser
-* we need to do this in 2 parts...this function is part one and kicks off the sequence of events
-* This function does part 1) it loads the special content script we created that just reads the HTML <form> element with the name "KualiForm" of the current page and sends back the URL of the "action" property of that form (with the flag set for the content script to allow it access)
-* then for the second part of actually doing something with action property which tells us the current KR module/tab being viewed, see the _ listener function above which is fired when we actually get the information back in the form of a message sent from the content script, which at that point things can keep going and we can use that info to decide if we turn the extension on based on the current KR page/tab
+* helps determine which module/tab in KR the user is currently viewing in the active browser tab in Google chrome (since we don't want to request the permisison to view the URLs of all the pages a user is using for security reasons, doing it this round about way with messages and a contentscript that is only loaded by manifest.js for KR URLs only - this way we can send a message and if the listener has been added via that contentscript we know we are on a KR page and if not we its not)
+*initiates a message to detectActiveKRModuleTabContentScript.js to instruct it to do the same thing as when a new page is loaded...send the message with the current KR module/tab action name to kick off the events that determine if this is a KR page that should have the extension activated...
+*when this tab is not KR (yahoo.com, etc) then the content script would not have been loaded since it doesnt match the URL pattern specified in manifest.json and so our message just wont get picked up and will die, just what we want for non-KR pages
+*the tab number is required by the background.js sendmessage - so we have to do the below step to figure out which is the the current/active tab the person is viewing
 */
 function initiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn() {
                                                                       console.log(`calledinitiateMessagePassingToFigureOutWhichKRModuleTabWeAreOn`);
-  //now that we know we are on a KR page, call the content script that will detect the KR module and tab selected by checking the KualiForm action URL/value (will have to be passed back as a message)
-  chrome.tabs.executeScript({file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
+  // //now that we know we are on a KR page, call the content script that will detect the KR module and tab selected by checking the KualiForm action URL/value (will have to be passed back as a message)
+  // chrome.tabs.executeScript({file: "detectActiveKRModuleTabContentScript.js", allFrames: true});
+
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, {msgForDetectActiveKRModuleTabContentScript: "please send KR kualiform action URL"}
+
+
+    // , function(response) {
+    //   //chrome requires that we check that an error did not happen sending this type of message, so we have to check for the chrome.runtime.lastError property or else it throws a Unchecked runtime.lastError error (I think they are trying to be helpful making sure your program is taking that situation into account, in our case we don't care because if the detectActiveKRModuleTabContentScript.js doesn't exist it just means we are not currently looking at a KR page
+    //   //this is how we are telling if we are currently on a KR page because the detectActiveKRModuleTabContentScript.js listener would have been added
+    //   if (chrome.runtime.lastError) {
+    //     console.info(`message to the detectActiveKRModuleTabContentScript.js listener added to the current browser tab did not go through, probably because its a non-KR page and therefore did not match the URL rules to allow a contentscript to be loaded - this is what we want as this is how we are determining if its a non KR page and we can ignore it, chrome.runtime.lastError shows: ${JSON.stringify(chrome.runtime.lastError)}`);
+    //   }
+    //   else {
+    //     //otherwise message looks like it made it to the detectActiveKRModuleTabContentScript.js listener without error
+    //     if (response && response.theFormAction) {
+    //         console.log(`response (second half of 2-way) back from detectActiveKRModuleTabContentScript.js to background.js: ${JSON.stringify(response)}`);
+    //         const formActionFromMsg = response.theFormAction;
+    //         checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
+    //     }
+    //   }
+    // }
+
+
+    );
+  });
+
 }
+
+
+
 
 /**
  * based on whether the extension is currently enabled (using flag), either set to the inactive color if clicked on or the disabled color if clicked off (turning it green will happen at a later stage right along with the code to actually modify the page, if thats the case)
@@ -133,15 +221,16 @@ function setIconInactiveOrDisabled() {
 }
 
 /**
- * confirm if the current tab/page loaded is a KR page (based on the urlPatterns passed in that match Kuali Research URL patterns - note it doesn't look at which KR module/tab is loaded, ONLY that the URL matches a potential KR page), if it does, run the next step to confirm the extension is also currently enabled
+ * wait until the current page in the browser is fully loaded before going on to the next step (of sending a message to the content script to check the form action URL of the currently loaded page)
+ * had founds that without this step, the time and money first tab for example was sending back the RouteLog.do URL instead of the timeAndMoney.do URL which is the one we care about and want to check - unfortunately, it looks like without this, we get back responses from the KualiForm iframes that we dont want but not the one we do want (timeAndMoney.do) presumably because that iframe hasnt finished loading yet...waiting until the page fully loads before sending the message to ask for
+ * that info from the detectActiveKRModuleTabContentScript.js listeners prevents that issue
  */
-function updateCurrentTabIfKRAndExtensionEnabled(urlPatterns) {
+function updateCurrentTabIfKRAndExtensionEnabled() {
   chrome.tabs.query({
   "active":        true,
   "currentWindow": true,
   "status":        "complete",
-  "windowType":    "normal",
-  "url": urlPatterns
+  "windowType":    "normal"
   }, function(tabs) {
    //if the url pattern doesnt match KR as specified in the url property above, this function will run but with an empty array, so don't do anything for these pages - this makes sure it returned something when querying for the current active tab
    if (tabs && tabs[0]) {
@@ -149,6 +238,7 @@ function updateCurrentTabIfKRAndExtensionEnabled(urlPatterns) {
    }
   });
 }
+
 
 /**
  * check if the extension is currently on (using global flag keeping history of on/off),
@@ -218,6 +308,7 @@ function setExtensionIconDisabledColor() {
 *
 */
 function checkIfCurrentPageInListOfKRModulesTabs(actionStr) {
+  console.log(`checkIfCurrentPageInListOfKRModulesTabs called with actionStr: ${actionStr}`);
   // use the configSettings.js data/listing (imported in manifest.json) of KR Modules and Tabs that we want to "turn on" this extension automatically when we go to that page - decided it would be cleaner to keep this in a separate file so we could easily add KR modules/tabs in the future without having to change anything else in the code
   //use a js regular expression to pull out just the .do page name from the KualiForms action URL, for example awardHome.do or awardContacts.do
   const pullOutPageNameWithDoFromActionUrlRegex = new RegExp('\/([a-zA-Z]{2,100}.do)', 'ig');
@@ -247,9 +338,11 @@ function makeCustomizationsToCurrentPage(relativeCssFilePath, relativeJsFilePath
   setExtensionIconActiveColor();
   if (relativeCssFilePath) {
     chrome.tabs.insertCSS({file: relativeCssFilePath, allFrames: true});
+    console.log(`called chrome.tabs.insertCSS({file: ${relativeCssFilePath}, allFrames: true})`);
   }
   if (relativeJsFilePath) {
     chrome.tabs.executeScript({file: relativeJsFilePath, allFrames: true});
+    console.log(`called chrome.tabs.executeScript({file: ${relativeJsFilePath}, allFrames: true})`);
   }
 }
 
