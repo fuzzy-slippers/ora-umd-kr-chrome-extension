@@ -48,12 +48,86 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                                                                                 console.groupEnd();
 });
 
+//when a page is refreshed, this listener is triggered which sends a message to background.js to initialize the extension back to inactive/disabled for the current page as the page is first loading (before later determining if it should be enabled based on the current Tab)
+//before DOMContentLoaded - https://developer.mozilla.org/en-US/docs/Web/API/Document/readyState
+document.addEventListener('readystatechange', event => {
+  console.group(`document.addEventListener('readystatechange'...`);
 
+  //we only want to send a message when the top level window is being loaded and not each time an iframe inside is being loaded - by checking that the parent of the window is window.top, we are confirming this is the top level iframe/window
+  //note that for KR pages that do redirects, we can still have several readystatechange events happen with each one being a top level window/iframe - but in testing this still always happens before the onload code runs for the iframe/window we care about, so this should still work to initialize the extension back to disabled (and then have that stuff run after to potentially activiate it for those KR modules/tabs that should have that happen)
+  if (window.parent === window.top) {
+    chrome.runtime.sendMessage({setExtensionInactiveDisabled: true});
+                                      console.log(`window.parent === window.top so send message to background.js to reset extension icon for this page back to inactive as an initial starting point`);
+                                      (event.target ? console.log(`event.target: ${JSON.stringify(event.target)}`) : console.log(`event.target not found`) );
+                                      (event.target.readyState ? console.log(`event.target.readyState: ${JSON.stringify(event.target.readyState)}`) : console.log(`event.target.readyState not found`) );
+  }
+  console.groupEnd();
+
+                                  // if (event.target) {
+                                  //   console.log(`event.target exists and is ${JSON.stringify(event.target)}`);
+                                  //   if (event.target.readyState) {
+                                  //     console.log(`event.target.readyState exists and is ${JSON.stringify(event.target.readyState)}`);
+                                  //   }
+                                  //   else {
+                                  //     console.log(`event.target.readyState does not exist`);
+                                  //   }
+                                  // }
+                                  // else {
+                                  //   console.log(`event.target does not exist`);
+                                  // }
+                                  //
+                                  // console.log(`next checking if window.parent === window.top`);
+                                  // if (window.parent === window.top) {
+                                  //   console.log(`window.parent === window.top`);
+                                  // }
+                                  // else {
+                                  //   console.log(`window.parent was NOT === window.top`);
+                                  // }
+
+
+                                // if (event.target.readyState === 'loading') {
+                                //   console.log(`document.addEventListener('readystatechange'...event.target.readyState === 'loading'`);
+                                //   //would send message to set extension inactive/disabled
+                                // }
+                                // if (event.target.readyState === 'interactive') {
+                                //   console.log(`document.addEventListener('readystatechange'...event.target.readyState === 'interactive'`);
+                                //   //would send message to set extension inactive/disabled
+                                //   //console.groupEnd();
+                                // }
+});
+
+//all page resources fully loaded -
 window.onload = (event) => {
                                                                                 console.group(`window.onload = (event) fired based on detectActiveKrModuleTabContent loading/refreshing - so page is fully loaded - event details: ${JSON.stringify(event)}`);
   sendMessageToBackgroundProgramWithCurrentKualiFormActionUrl();
                                                                                 console.groupEnd();
 };
+
+// function logOnBefore(details) {
+//   console.log("onBeforeNavigate to: " + details.url);
+// }
+//
+// browser.webNavigation.onBeforeNavigate.addListener(logOnBefore);
+
+// //detect dom loaded
+// document.addEventListener('DOMContentLoaded', (event) => {
+//     console.log('DOM fully loaded and parsed');
+// });
+//
+// window.addEventListener('load', (event) => {
+//     console.log('window.addEventListener load\n');
+// });
+//
+// window.addEventListener('readystatechange', (event) => {
+//     console.log(`readystate: ${window.readyState} event: ${JSON.stringify(event)}\n`);
+// });
+//
+// window.addEventListener('DOMContentLoaded', (event) => {
+//     console.log(`DOMContentLoaded\n`);
+// });
+
+
+
 
 
 

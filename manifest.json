@@ -1,6 +1,6 @@
 {
   "name":           "(ORA@UMD) KR Extension for Power Users",
-  "version":        "1.01",
+  "version":        "1.013",
   "description":    "A Chrome browser extension created by the Office of Research Administration at the University of Maryland.",
   "content_scripts": [
     {
