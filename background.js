@@ -44,8 +44,6 @@ chrome.browserAction.onClicked.addListener(function(tab) {
    console.log(`inside chrome.tabs.onActivated.addListener (called when switching tabs)`);
    //altVersionInitiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecifiedKRModuleTab();
    initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab();
-
-
 });
 
 
@@ -61,6 +59,8 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 //     setIconInactiveOrDisabled();
 //
 // }, {});
+
+
 
 // // new URL loaded in either new or existing tab - because this often fires after the onload in detectActiveKRModuleTabContentScript we need both (will try to prevent both happening in that scenario on the detectActiveKRModuleTabContentScript side)
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
@@ -106,6 +106,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
  * this listener will check all three and check if ANY of the three are URLs that should flag the current page as active (it would have already been set inactive earlier before this step runs, so then if any of the three flag it active, it should stay active for this page load)
  */
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+                                                    console.group("background.js chrome.runtime.onMessage.addListener");
                                                       console.log(`background.js chrome.runtime.onMessage.addListener received a message`);
                                                       console.log(`background.js chrome.runtime.onMessage.addListener received request: ${JSON.stringify(request)} sender: ${JSON.stringify(sender)} sendResponse: ${JSON.stringify(sendResponse)}`);
 
@@ -114,7 +115,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
     //look for messages that contain a "theFormAction" property, which indicate the message is coming from detectActiveKRModuleTabContentScript.js specifically - also make sure a valid form action URL was sent to us (not a blank string/null) before proceeding to try to parse the URL
     if (request.theFormAction) {
-                        console.log(`one of possibly multiple responses from detectActiveKRModuleTabContentScript.js detected by the chrome.runtime.onMessage.addListener (will run checkIfCurrentPageInListOfKRModulesTabs on it): ${JSON.stringify(request)}`);
+                        console.log(`STATUS=complete: one of possibly multiple responses from detectActiveKRModuleTabContentScript.js detected by the chrome.runtime.onMessage.addListener (will run checkIfCurrentPageInListOfKRModulesTabs on it): ${JSON.stringify(request)}`);
       const formActionFromMsg = request.theFormAction;
       //instead of calling initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab() which will be changing the icon color back to yellow/gray with each iframe in the KR page (sometimes the last one to send a message is a routing iframe that would trigger the extension to show as off), call checkIfCurrentPageInListOfKRModulesTabs as that skips the step of determining if the icon needs to be turned inactive/disabled and goes right to determining if it needs to be enabled (if one of   //the four iframes in a page has a URL that indicates we are on a KR module/tab that should enable the extension and show the active icon even if other iframes on the current KR page have other random names like "RouteLog.do")
       checkIfCurrentPageInListOfKRModulesTabs(formActionFromMsg);
@@ -133,12 +134,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
    * priviledges to track URLs which we don't want to do)
    */
   if (request.onloadTheFormAction) {
-                      console.log(`message from detectActiveKRModuleTabContentScript.js detected by window.onload (will run checkIfCurrentPageInListOfKRModulesTabs on it): ${JSON.stringify(request)}`);
+                      console.log(`status both complete or loading: message from detectActiveKRModuleTabContentScript.js detected by window.onload (will run checkIfCurrentPageInListOfKRModulesTabs on it): ${JSON.stringify(request)}`);
     const onloadFormActionFromMsg = request.onloadTheFormAction;
     //instead of calling initiallySetIconInactiveOrDisabledThenEnableOnlyIfSpecificKRModuleTab() which will be changing the icon color back to yellow/gray with each iframe in the KR page (sometimes the last one to send a message is a routing iframe that would trigger the extension to show as off), call checkIfCurrentPageInListOfKRModulesTabs as that skips the step of determining if the icon needs to be turned inactive/disabled and goes right to determining if it needs to be enabled (if one of   //the four iframes in a page has a URL that indicates we are on a KR module/tab that should enable the extension and show the active icon even if other iframes on the current KR page have other random names like "RouteLog.do")
     checkIfCurrentPageInListOfKRModulesTabs(onloadFormActionFromMsg);
   }
-
+                                                      console.groupEnd();
 });
 
 /*

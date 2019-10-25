@@ -41,16 +41,18 @@
 * this is how we are now determining which KR page we are currently on (without the actual extension needing to be able to check the URL of every page the user has open)
 */
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.info(`chrome.runtime.onMessage.addListener detected a message to detectActiveKrModuleTabContent script sent from background.js`);
+                                                                                console.group(`chrome.runtime.onMessage.addListener detected a message to detectActiveKrModuleTabContent script sent from background.js`);
   if (request.msgForDetectActiveKRModuleTabContentScript) {
     sendMessageToBackgroundProgramWithCurrentKualiFormActionUrl();
   }
+                                                                                console.groupEnd();
 });
 
 
 window.onload = (event) => {
-  console.info(`window.onload = (event) fired based on detectActiveKrModuleTabContent loading/refreshing - so page is fully loaded - event details: ${JSON.stringify(event)}`);
+                                                                                console.group(`window.onload = (event) fired based on detectActiveKrModuleTabContent loading/refreshing - so page is fully loaded - event details: ${JSON.stringify(event)}`);
   sendMessageToBackgroundProgramWithCurrentKualiFormActionUrl();
+                                                                                console.groupEnd();
 };
 
 
