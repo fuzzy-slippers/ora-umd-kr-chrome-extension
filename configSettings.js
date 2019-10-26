@@ -7,6 +7,8 @@
  option with chrome extensions.
  The configurations changable here so far are:
  - modulesTabsInKRToActivateExtension: which KR modules and tabs should the extension automatically active for based on the form action URL inside the page html (all other KR pages the extension will be inactive)
+ - allIconImages: instead of hard coding the actual image file names directly into the main code allows us to use "activeImgName", etc which is more readable
+ - userMessages: configure the text for messages to the user, so far just a pop up message when you click to turn off the extension
  *****************************************************************************/
 const configSettings = {
   "modulesTabsInKRToActivateExtension": {
